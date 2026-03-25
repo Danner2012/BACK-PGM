@@ -5,7 +5,6 @@ from api.models import Usuario
 class AuthService:
     @staticmethod
     def authenticate_user(correo, clave):
-        # authenticate() de Django ya maneja el hash de la clave
         user = authenticate(username=correo, password=clave)
         
         if user is None:

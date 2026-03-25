@@ -25,7 +25,6 @@ class UsuarioManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         
-        # Asignar rol de superadministrador (ID 1 según el seed planteado)
         try:
             rol_super = Rol.objects.get(id=1)
         except Rol.DoesNotExist:
@@ -40,7 +39,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     id_rol = models.ForeignKey(Rol, on_delete=models.PROTECT, null=True)
     estado = models.BooleanField(default=True)
     
-    # Campos requeridos por Django Admin
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
