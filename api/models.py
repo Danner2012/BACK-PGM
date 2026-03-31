@@ -105,3 +105,85 @@ class Estudiante(models.Model):
 
     class Meta:
         db_table = 'api_estudiante'
+
+class TipoCurso(models.Model):
+    nombre = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        db_table = 'tipo_curso'
+
+class Curso(models.Model):
+    id_administrador = models.ForeignKey(Administrador, on_delete=models.CASCADE, db_column='id_administrador')
+    id_tipo = models.ForeignKey(TipoCurso, on_delete=models.CASCADE, db_column='id_tipo')
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    estado = models.BooleanField(default=True)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        db_table = 'curso'
+
+class CursoTecnico(models.Model):
+    id_tecnico = models.ForeignKey(Tecnico, on_delete=models.CASCADE, db_column='id_tecnico')
+    id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE, db_column='id_curso')
+    estado = models.CharField(max_length=20, default='activo') # activo/inactivo
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'curso_tecnico'
+
+class Dia(models.Model):
+    nombre = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        db_table = 'dia'
+
+class Horario(models.Model):
+    nombre = models.CharField(max_length=100)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        db_table = 'horario'
+
+class CursoHorario(models.Model):
+    id_horario = models.ForeignKey(Horario, on_delete=models.CASCADE, db_column='id_horario')
+    id_dia = models.ForeignKey(Dia, on_delete=models.CASCADE, db_column='id_dia')
+    id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE, db_column='id_curso')
+    cupo_maximo = models.IntegerField()
+
+    class Meta:
+        db_table = 'curso_horario'
+
+class Inscripcion(models.Model):
+    id_curso_horario = models.ForeignKey(CursoHorario, on_delete=models.CASCADE, db_column='id_curso_horario')
+    id_estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, db_column='id_estudiante')
+    estado = models.CharField(max_length=20, default='pendiente')
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'inscripcion'
+
+class Pago(models.Model):
+    id_inscripcion = models.ForeignKey(Inscripcion, on_delete=models.CASCADE, db_column='id_inscripcion')
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    estado = models.CharField(max_length=20, default='pendiente')
+    metodo = models.CharField(max_length=20) # Fisico/QR
+    fecha_pago = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'pago'
