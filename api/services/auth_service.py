@@ -10,6 +10,7 @@ class AuthService:
         if user is None:
             return None, "Credenciales inválidas"
         
+        # Validar estado del Usuario (Centralizado)
         if not user.estado:
             return None, "Usuario inactivo"
         
