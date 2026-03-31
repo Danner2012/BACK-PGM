@@ -53,3 +53,55 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
+
+from django.core.exceptions import ValidationError
+
+class Administrador(models.Model):
+    id_usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, db_column='id_usuario', related_name='administrador')
+    nombre = models.CharField(max_length=100)
+    apellido_paterno = models.CharField(max_length=100)
+    apellido_materno = models.CharField(max_length=100)
+    celular = models.CharField(max_length=20)
+    ci = models.CharField(max_length=20, unique=True)
+
+    def save(self, *args, **kwargs):
+        if self.id_usuario.id_rol_id != 2:
+            raise ValidationError("El usuario debe tener el rol 'administrador' (ID 2).")
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'api_administrador'
+
+class Tecnico(models.Model):
+    id_usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, db_column='id_usuario', related_name='tecnico')
+    nombre = models.CharField(max_length=100)
+    apellido_paterno = models.CharField(max_length=100)
+    apellido_materno = models.CharField(max_length=100)
+    celular = models.CharField(max_length=20)
+    ci = models.CharField(max_length=20, unique=True)
+    especialidad = models.CharField(max_length=100)
+
+    def save(self, *args, **kwargs):
+        if self.id_usuario.id_rol_id != 3:
+            raise ValidationError("El usuario debe tener el rol 'técnico' (ID 3).")
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'api_tecnico'
+
+class Estudiante(models.Model):
+    id_usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, db_column='id_usuario', related_name='estudiante')
+    nombre = models.CharField(max_length=100)
+    apellido_paterno = models.CharField(max_length=100)
+    apellido_materno = models.CharField(max_length=100)
+    celular = models.CharField(max_length=20)
+    ci = models.CharField(max_length=20, unique=True)
+    fecha_registro = models.DateField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.id_usuario.id_rol_id != 4:
+            raise ValidationError("El usuario debe tener el rol 'estudiante' (ID 4).")
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'api_estudiante'
