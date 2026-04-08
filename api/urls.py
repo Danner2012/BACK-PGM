@@ -3,9 +3,18 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from api.views.auth_views import LoginView
 from api.views.user_views import UserProfileView, TecnicoViewSet
+from api.views.curso_views import (
+    TipoCursoViewSet, DiaViewSet, HorarioViewSet, 
+    CursoViewSet, CursoHorarioViewSet
+)
 
 router = DefaultRouter()
 router.register(r'tecnicos', TecnicoViewSet, basename='tecnico')
+router.register(r'tipos-curso', TipoCursoViewSet, basename='tipo-curso')
+router.register(r'dias', DiaViewSet, basename='dia')
+router.register(r'horarios', HorarioViewSet, basename='horario')
+router.register(r'cursos', CursoViewSet, basename='curso')
+router.register(r'curso-horarios', CursoHorarioViewSet, basename='curso-horario')
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
