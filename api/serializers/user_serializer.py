@@ -65,3 +65,41 @@ class TecnicoCRUDSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+class EstudianteCRUDSerializer(serializers.ModelSerializer):
+    correo = serializers.EmailField(source='id_usuario.correo')
+    estado = serializers.BooleanField(source='id_usuario.estado', read_only=True)
+    id_usuario_id = serializers.IntegerField(source='id_usuario.id', read_only=True)
+
+    class Meta:
+        model = Estudiante
+        fields = [
+            'id', 'id_usuario_id', 'correo', 'nombre', 'apellido_paterno', 
+            'apellido_materno', 'celular', 'ci', 'fecha_registro', 'estado'
+        ]
+        read_only_fields = ['fecha_registro']
+
+    def create(self, validated_data):
+        usuario_data = validated_data.pop('id_usuario')
+        # Crear el usuario primero
+        rol_estudiante = Rol.objects.get(id=4)
+        usuario = Usuario.objects.create_user(
+            correo=usuario_data['correo'],
+            password=self.context.get('password'), # Se pasará desde la vista
+            id_rol=rol_estudiante
+        )
+        # Crear el perfil de estudiante
+        estudiante = Estudiante.objects.create(id_usuario=usuario, **validated_data)
+        return estudiante
+
+    def update(self, instance, validated_data):
+        usuario_data = validated_data.pop('id_usuario', None)
+        if usuario_data and 'correo' in usuario_data:
+            instance.id_usuario.correo = usuario_data['correo']
+            instance.id_usuario.save()
+        
+        # Actualizar campos del estudiante
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance

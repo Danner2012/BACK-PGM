@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from api.views.auth_views import LoginView
-from api.views.user_views import UserProfileView, TecnicoViewSet
+from api.views.user_views import UserProfileView, TecnicoViewSet, EstudianteViewSet
 from api.views.curso_views import (
     TipoCursoViewSet, DiaViewSet, HorarioViewSet, 
     CursoViewSet, CursoHorarioViewSet, CursoTecnicoViewSet
@@ -10,6 +10,7 @@ from api.views.curso_views import (
 
 router = DefaultRouter()
 router.register(r'tecnicos', TecnicoViewSet, basename='tecnico')
+router.register(r'estudiantes', EstudianteViewSet, basename='estudiante')
 router.register(r'tipos-curso', TipoCursoViewSet, basename='tipo-curso')
 router.register(r'dias', DiaViewSet, basename='dia')
 router.register(r'horarios', HorarioViewSet, basename='horario')

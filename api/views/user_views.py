@@ -6,8 +6,8 @@ from api.serializers.user_serializer import UsuarioSerializer
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from api.models import Tecnico, Usuario
-from api.serializers.user_serializer import TecnicoCRUDSerializer
+from api.models import Tecnico, Usuario, Estudiante
+from api.serializers.user_serializer import TecnicoCRUDSerializer, EstudianteCRUDSerializer
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -36,6 +36,34 @@ class TecnicoViewSet(viewsets.ModelViewSet):
     def toggle_status(self, request, pk=None):
         tecnico = self.get_object()
         usuario = tecnico.id_usuario
+        usuario.estado = not usuario.estado
+        usuario.save()
+        return Response({
+            'status': 'success',
+            'estado': usuario.estado,
+            'mensaje': f"Usuario {'activado' if usuario.estado else 'desactivado'} correctamente"
+        })
+
+class EstudianteViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Estudiante.objects.select_related('id_usuario').all()
+    serializer_class = EstudianteCRUDSerializer
+
+    def create(self, request, *args, **kwargs):
+        password = request.data.get('password')
+        if not password:
+            return Response({"error": "La contraseña es requerida para crear un usuario"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = self.get_serializer(data=request.data, context={'password': password})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=True, methods=['post'], url_path='toggle-status')
+    def toggle_status(self, request, pk=None):
+        estudiante = self.get_object()
+        usuario = estudiante.id_usuario
         usuario.estado = not usuario.estado
         usuario.save()
         return Response({
