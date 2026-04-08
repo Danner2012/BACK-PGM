@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico
+from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Inscripcion
 from ..serializers.curso_serializer import (
     TipoCursoSerializer, DiaSerializer, HorarioSerializer, 
-    CursoSerializer, CursoHorarioSerializer, CursoTecnicoSerializer
+    CursoSerializer, CursoHorarioSerializer, CursoTecnicoSerializer,
+    InscripcionSerializer
 )
 
 class TipoCursoViewSet(viewsets.ModelViewSet):
@@ -78,4 +79,38 @@ class CursoTecnicoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        return super().create(request, *args, **kwargs)
+
+class InscripcionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Inscripcion.objects.all()
+    serializer_class = InscripcionSerializer
+
+    def create(self, request, *args, **kwargs):
+        id_curso_horario = request.data.get('id_curso_horario')
+        id_estudiante = request.data.get('id_estudiante')
+
+        if not id_curso_horario or not id_estudiante:
+            return Response({"error": "Estudiante y Horario de curso son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si ya está inscrito
+        if Inscripcion.objects.filter(id_curso_horario=id_curso_horario, id_estudiante=id_estudiante).exists():
+            return Response(
+                {"error": "Este estudiante ya está inscrito en este horario de curso."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar cupo
+        try:
+            curso_horario = CursoHorario.objects.get(id=id_curso_horario)
+            inscritos = Inscripcion.objects.filter(id_curso_horario=id_curso_horario).count()
+            
+            if inscritos >= curso_horario.cupo_maximo:
+                return Response(
+                    {"error": "No hay cupos disponibles para este horario."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except CursoHorario.DoesNotExist:
+            return Response({"error": "El horario del curso no existe."}, status=status.HTTP_404_NOT_FOUND)
+
         return super().create(request, *args, **kwargs)
