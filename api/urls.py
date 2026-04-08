@@ -5,7 +5,7 @@ from api.views.auth_views import LoginView
 from api.views.user_views import UserProfileView, TecnicoViewSet
 from api.views.curso_views import (
     TipoCursoViewSet, DiaViewSet, HorarioViewSet, 
-    CursoViewSet, CursoHorarioViewSet
+    CursoViewSet, CursoHorarioViewSet, CursoTecnicoViewSet
 )
 
 router = DefaultRouter()
@@ -15,6 +15,7 @@ router.register(r'dias', DiaViewSet, basename='dia')
 router.register(r'horarios', HorarioViewSet, basename='horario')
 router.register(r'cursos', CursoViewSet, basename='curso')
 router.register(r'curso-horarios', CursoHorarioViewSet, basename='curso-horario')
+router.register(r'curso-tecnicos', CursoTecnicoViewSet, basename='curso-tecnico')
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),

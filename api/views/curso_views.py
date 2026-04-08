@@ -1,10 +1,10 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador
+from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico
 from ..serializers.curso_serializer import (
     TipoCursoSerializer, DiaSerializer, HorarioSerializer, 
-    CursoSerializer, CursoHorarioSerializer
+    CursoSerializer, CursoHorarioSerializer, CursoTecnicoSerializer
 )
 
 class TipoCursoViewSet(viewsets.ModelViewSet):
@@ -58,6 +58,23 @@ class CursoHorarioViewSet(viewsets.ModelViewSet):
         if CursoHorario.objects.filter(id_curso=id_curso, id_dia=id_dia, id_horario=id_horario).exists():
             return Response(
                 {"error": "Este curso ya tiene asignado este horario en este día."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return super().create(request, *args, **kwargs)
+
+class CursoTecnicoViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = CursoTecnico.objects.all()
+    serializer_class = CursoTecnicoSerializer
+
+    def create(self, request, *args, **kwargs):
+        id_curso = request.data.get('id_curso')
+        id_tecnico = request.data.get('id_tecnico')
+
+        if CursoTecnico.objects.filter(id_curso=id_curso, id_tecnico=id_tecnico).exists():
+            return Response(
+                {"error": "Este técnico ya está asignado a este curso."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         

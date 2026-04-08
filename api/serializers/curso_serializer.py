@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador
+from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Tecnico
 
 class TipoCursoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,9 +28,25 @@ class CursoHorarioSerializer(serializers.ModelSerializer):
     def get_horario_detalle(self, obj):
         return f"{obj.id_horario.hora_inicio} - {obj.id_horario.hora_fin}"
 
+class TecnicoSimpleSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    class Meta:
+        model = Tecnico
+        fields = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'nombre_completo', 'especialidad']
+    
+    def get_nombre_completo(self, obj):
+        return f"{obj.nombre} {obj.apellido_paterno} {obj.apellido_materno}".strip()
+
+class CursoTecnicoSerializer(serializers.ModelSerializer):
+    tecnico_detalle = TecnicoSimpleSerializer(source='id_tecnico', read_only=True)
+    class Meta:
+        model = CursoTecnico
+        fields = '__all__'
+
 class CursoSerializer(serializers.ModelSerializer):
     tipo_nombre = serializers.ReadOnlyField(source='id_tipo.nombre')
     horarios = CursoHorarioSerializer(many=True, read_only=True, source='cursohorario_set')
+    tecnicos = CursoTecnicoSerializer(many=True, read_only=True, source='cursotecnico_set')
     
     class Meta:
         model = Curso
@@ -40,5 +56,4 @@ class CursoSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # El administrador se asignará en la vista basándose en el usuario autenticado
         return super().create(validated_data)
