@@ -76,10 +76,23 @@ class CursoTecnicoViewSet(viewsets.ModelViewSet):
         
         return super().create(request, *args, **kwargs)
 
+from rest_framework.decorators import action
+from ..models import Estudiante
+
 class InscripcionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Inscripcion.objects.all()
     serializer_class = InscripcionSerializer
+
+    @action(detail=False, methods=['get'], url_path='mis-cursos')
+    def mis_cursos(self, request):
+        try:
+            estudiante = Estudiante.objects.get(id_usuario=request.user)
+            inscripciones = Inscripcion.objects.filter(id_estudiante=estudiante)
+            serializer = self.get_serializer(inscripciones, many=True)
+            return Response(serializer.data)
+        except Estudiante.DoesNotExist:
+            return Response({"error": "No se encontró perfil de estudiante para este usuario."}, status=404)
 
     def create(self, request, *args, **kwargs):
         id_curso = request.data.get('id_curso')
