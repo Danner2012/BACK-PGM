@@ -124,6 +124,7 @@ class Curso(models.Model):
     estado = models.BooleanField(default=True)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
+    cupo_maximo = models.IntegerField(default=0)
 
     def __str__(self):
         return self.nombre
@@ -164,13 +165,12 @@ class CursoHorario(models.Model):
     id_horario = models.ForeignKey(Horario, on_delete=models.CASCADE, db_column='id_horario')
     id_dia = models.ForeignKey(Dia, on_delete=models.CASCADE, db_column='id_dia')
     id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE, db_column='id_curso')
-    cupo_maximo = models.IntegerField()
 
     class Meta:
         db_table = 'curso_horario'
 
 class Inscripcion(models.Model):
-    id_curso_horario = models.ForeignKey(CursoHorario, on_delete=models.CASCADE, db_column='id_curso_horario')
+    id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE, db_column='id_curso', null=True)
     id_estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, db_column='id_estudiante')
     estado = models.CharField(max_length=20, default='pendiente')
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)

@@ -36,7 +36,7 @@ class TipoCursoAdmin(admin.ModelAdmin):
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombre', 'id_tipo', 'precio', 'estado', 'fecha_inicio', 'fecha_fin')
+    list_display = ('id', 'nombre', 'id_tipo', 'precio', 'cupo_maximo', 'estado', 'fecha_inicio', 'fecha_fin')
     list_filter = ('estado', 'id_tipo')
     search_fields = ('nombre',)
 
@@ -55,12 +55,12 @@ class HorarioAdmin(admin.ModelAdmin):
 
 @admin.register(CursoHorario)
 class CursoHorarioAdmin(admin.ModelAdmin):
-    list_display = ('id', 'id_curso', 'id_dia', 'id_horario', 'cupo_maximo')
+    list_display = ('id', 'id_curso', 'id_dia', 'id_horario')
     list_filter = ('id_dia', 'id_horario')
 
 @admin.register(Inscripcion)
 class InscripcionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'id_estudiante', 'id_curso_horario', 'estado', 'fecha_inscripcion')
+    list_display = ('id', 'id_estudiante', 'id_curso', 'estado', 'fecha_inscripcion')
     list_filter = ('estado',)
 
 @admin.register(Pago)

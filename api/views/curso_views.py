@@ -87,30 +87,30 @@ class InscripcionViewSet(viewsets.ModelViewSet):
     serializer_class = InscripcionSerializer
 
     def create(self, request, *args, **kwargs):
-        id_curso_horario = request.data.get('id_curso_horario')
+        id_curso = request.data.get('id_curso')
         id_estudiante = request.data.get('id_estudiante')
 
-        if not id_curso_horario or not id_estudiante:
-            return Response({"error": "Estudiante y Horario de curso son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
+        if not id_curso or not id_estudiante:
+            return Response({"error": "Estudiante y Curso son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Verificar si ya está inscrito
-        if Inscripcion.objects.filter(id_curso_horario=id_curso_horario, id_estudiante=id_estudiante).exists():
+        if Inscripcion.objects.filter(id_curso=id_curso, id_estudiante=id_estudiante).exists():
             return Response(
-                {"error": "Este estudiante ya está inscrito en este horario de curso."},
+                {"error": "Este estudiante ya está inscrito en este curso."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # Verificar cupo
         try:
-            curso_horario = CursoHorario.objects.get(id=id_curso_horario)
-            inscritos = Inscripcion.objects.filter(id_curso_horario=id_curso_horario).count()
+            curso = Curso.objects.get(id=id_curso)
+            inscritos = Inscripcion.objects.filter(id_curso=id_curso, estado='confirmado').count()
             
-            if inscritos >= curso_horario.cupo_maximo:
+            if inscritos >= curso.cupo_maximo:
                 return Response(
-                    {"error": "No hay cupos disponibles para este horario."},
+                    {"error": "No hay cupos disponibles para este curso."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        except CursoHorario.DoesNotExist:
-            return Response({"error": "El horario del curso no existe."}, status=status.HTTP_404_NOT_FOUND)
+        except Curso.DoesNotExist:
+            return Response({"error": "El curso no existe."}, status=status.HTTP_404_NOT_FOUND)
 
         return super().create(request, *args, **kwargs)

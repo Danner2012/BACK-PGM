@@ -69,17 +69,18 @@ class EstudianteSimpleSerializer(serializers.ModelSerializer):
 
 class InscripcionSerializer(serializers.ModelSerializer):
     estudiante_detalle = EstudianteSimpleSerializer(source='id_estudiante', read_only=True)
-    curso_horario_detalle = serializers.SerializerMethodField()
+    curso_detalle = serializers.SerializerMethodField()
     
     class Meta:
         model = Inscripcion
         fields = '__all__'
 
-    def get_curso_horario_detalle(self, obj):
-        ch = obj.id_curso_horario
+    def get_curso_detalle(self, obj):
+        c = obj.id_curso
+        if not c: return None
         return {
-            'curso_nombre': ch.id_curso.nombre,
-            'dia_nombre': ch.id_dia.nombre,
-            'horario_detalle': f"{ch.id_horario.hora_inicio} - {ch.id_horario.hora_fin}",
-            'precio': ch.id_curso.precio
+            'nombre': c.nombre,
+            'precio': c.precio,
+            'fecha_inicio': c.fecha_inicio,
+            'fecha_fin': c.fecha_fin
         }
