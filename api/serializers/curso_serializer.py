@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Tecnico, Inscripcion, Estudiante
+from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Tecnico, Inscripcion, Estudiante, Pago
 
 class TipoCursoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,6 +14,11 @@ class DiaSerializer(serializers.ModelSerializer):
 class HorarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Horario
+        fields = '__all__'
+
+class PagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pago
         fields = '__all__'
 
 class CursoHorarioSerializer(serializers.ModelSerializer):
@@ -47,6 +52,7 @@ class CursoSerializer(serializers.ModelSerializer):
     tipo_nombre = serializers.ReadOnlyField(source='id_tipo.nombre')
     horarios = CursoHorarioSerializer(many=True, read_only=True, source='cursohorario_set')
     tecnicos = CursoTecnicoSerializer(many=True, read_only=True, source='cursotecnico_set')
+    cupo_disponible = serializers.SerializerMethodField()
     
     class Meta:
         model = Curso
@@ -54,6 +60,10 @@ class CursoSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'id_administrador': {'required': False}
         }
+
+    def get_cupo_disponible(self, obj):
+        inscritos = Inscripcion.objects.filter(id_curso=obj, estado='confirmado').count()
+        return max(0, obj.cupo_maximo - inscritos)
 
     def create(self, validated_data):
         return super().create(validated_data)
@@ -70,6 +80,7 @@ class EstudianteSimpleSerializer(serializers.ModelSerializer):
 class InscripcionSerializer(serializers.ModelSerializer):
     estudiante_detalle = EstudianteSimpleSerializer(source='id_estudiante', read_only=True)
     curso_detalle = serializers.SerializerMethodField()
+    pago_detalle = serializers.SerializerMethodField()
     
     class Meta:
         model = Inscripcion
@@ -84,3 +95,8 @@ class InscripcionSerializer(serializers.ModelSerializer):
             'fecha_inicio': c.fecha_inicio,
             'fecha_fin': c.fecha_fin
         }
+
+    def get_pago_detalle(self, obj):
+        pago = Pago.objects.filter(id_inscripcion=obj).first()
+        if not pago: return None
+        return PagoSerializer(pago).data

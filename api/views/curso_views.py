@@ -1,7 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Inscripcion
+from django.db import transaction
+from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Inscripcion, Pago
 from ..serializers.curso_serializer import (
     TipoCursoSerializer, DiaSerializer, HorarioSerializer, 
     CursoSerializer, CursoHorarioSerializer, CursoTecnicoSerializer,
@@ -29,21 +30,16 @@ class CursoViewSet(viewsets.ModelViewSet):
     serializer_class = CursoSerializer
 
     def perform_create(self, serializer):
-        # Obtener el administrador asociado al usuario autenticado
         try:
             administrador = Administrador.objects.get(id_usuario=self.request.user)
             serializer.save(id_administrador=administrador)
         except Administrador.DoesNotExist:
-            # Si no tiene perfil, intentamos asignar el primer administrador que exista 
-            # para que no falle la creación durante el desarrollo.
             primer_admin = Administrador.objects.first()
             if primer_admin:
                 serializer.save(id_administrador=primer_admin)
             else:
-                # Si no hay NINGÚN administrador en la tabla api_administrador, 
-                # entonces sí tenemos un problema de datos.
                 from rest_framework.exceptions import ValidationError
-                raise ValidationError("No existe ningún perfil de Administrador en la base de datos. Crea uno primero.")
+                raise ValidationError("No existe ningún perfil de Administrador en la base de datos.")
 
 class CursoHorarioViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -51,7 +47,6 @@ class CursoHorarioViewSet(viewsets.ModelViewSet):
     serializer_class = CursoHorarioSerializer
 
     def create(self, request, *args, **kwargs):
-        # Verificar si ya existe el horario para ese curso en ese día
         id_curso = request.data.get('id_curso')
         id_dia = request.data.get('id_dia')
         id_horario = request.data.get('id_horario')
@@ -89,28 +84,62 @@ class InscripcionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         id_curso = request.data.get('id_curso')
         id_estudiante = request.data.get('id_estudiante')
+        metodo_pago = request.data.get('metodo_pago', 'Fisico')
 
         if not id_curso or not id_estudiante:
             return Response({"error": "Estudiante y Curso son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verificar si ya está inscrito
         if Inscripcion.objects.filter(id_curso=id_curso, id_estudiante=id_estudiante).exists():
             return Response(
                 {"error": "Este estudiante ya está inscrito en este curso."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Verificar cupo
         try:
-            curso = Curso.objects.get(id=id_curso)
-            inscritos = Inscripcion.objects.filter(id_curso=id_curso, estado='confirmado').count()
-            
-            if inscritos >= curso.cupo_maximo:
-                return Response(
-                    {"error": "No hay cupos disponibles para este curso."},
-                    status=status.HTTP_400_BAD_REQUEST
+            with transaction.atomic():
+                curso = Curso.objects.get(id=id_curso)
+                inscritos = Inscripcion.objects.filter(id_curso=id_curso, estado='confirmado').count()
+                
+                if inscritos >= curso.cupo_maximo:
+                    return Response(
+                        {"error": "No hay cupos disponibles para este curso."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                inscripcion = serializer.save()
+
+                Pago.objects.create(
+                    id_inscripcion=inscripcion,
+                    monto=curso.precio,
+                    metodo=metodo_pago,
+                    estado='pendiente'
                 )
+
+                headers = self.get_success_headers(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         except Curso.DoesNotExist:
             return Response({"error": "El curso no existe."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return super().create(request, *args, **kwargs)
+    def update(self, request, *args, **kwargs):
+        with transaction.atomic():
+            response = super().update(request, *args, **kwargs)
+            inscripcion = self.get_object()
+            if inscripcion.estado == 'confirmado':
+                Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pagado')
+            elif inscripcion.estado == 'cancelado':
+                Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pendiente')
+            return response
+
+    def partial_update(self, request, *args, **kwargs):
+        with transaction.atomic():
+            response = super().partial_update(request, *args, **kwargs)
+            inscripcion = self.get_object()
+            if inscripcion.estado == 'confirmado':
+                Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pagado')
+            elif inscripcion.estado == 'cancelado':
+                Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pendiente')
+            return response
