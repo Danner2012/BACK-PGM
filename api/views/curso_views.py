@@ -34,12 +34,8 @@ class CursoViewSet(viewsets.ModelViewSet):
             administrador = Administrador.objects.get(id_usuario=self.request.user)
             serializer.save(id_administrador=administrador)
         except Administrador.DoesNotExist:
-            primer_admin = Administrador.objects.first()
-            if primer_admin:
-                serializer.save(id_administrador=primer_admin)
-            else:
-                from rest_framework.exceptions import ValidationError
-                raise ValidationError("No existe ningún perfil de Administrador en la base de datos.")
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Su cuenta de usuario no tiene un perfil de Administrador vinculado. No puede crear cursos.")
 
 class CursoHorarioViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]

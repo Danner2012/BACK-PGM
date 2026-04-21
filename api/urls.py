@@ -8,6 +8,11 @@ from api.views.curso_views import (
     CursoViewSet, CursoHorarioViewSet, CursoTecnicoViewSet,
     InscripcionViewSet
 )
+from api.views.herramienta_views import (
+    CategoriaHerramientaViewSet,
+    HerramientaViewSet,
+    Modelo3DViewSet
+)
 
 router = DefaultRouter()
 router.register(r'tecnicos', TecnicoViewSet, basename='tecnico')
@@ -19,6 +24,9 @@ router.register(r'cursos', CursoViewSet, basename='curso')
 router.register(r'curso-horarios', CursoHorarioViewSet, basename='curso-horario')
 router.register(r'curso-tecnicos', CursoTecnicoViewSet, basename='curso-tecnico')
 router.register(r'inscripciones', InscripcionViewSet, basename='inscripcion')
+router.register(r'categorias-herramientas', CategoriaHerramientaViewSet, basename='categoria-herramienta')
+router.register(r'herramientas', HerramientaViewSet, basename='herramienta')
+router.register(r'modelos-3d', Modelo3DViewSet, basename='modelo-3d')
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),

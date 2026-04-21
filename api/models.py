@@ -187,3 +187,58 @@ class Pago(models.Model):
 
     class Meta:
         db_table = 'pago'
+
+class CategoriaHerramienta(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+    estado = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        db_table = 'categoria_herramienta'
+
+from django.utils.text import slugify
+
+class Herramienta(models.Model):
+    id_administrador = models.ForeignKey(Administrador, on_delete=models.PROTECT, db_column='id_administrador')
+    id_categoria = models.ForeignKey(CategoriaHerramienta, on_delete=models.SET_NULL, null=True, db_column='id_categoria')
+    nombre = models.CharField(max_length=150)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
+    descripcion = models.TextField()
+    uso = models.TextField()
+    info_importante = models.TextField()
+    imagen_previa = models.ImageField(upload_to='herramientas/fotos/', null=True, blank=True)
+    estado = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.nombre)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        db_table = 'herramienta'
+
+class Modelo3D(models.Model):
+    id_herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE, related_name='modelos_3d', db_column='id_herramienta')
+    archivo = models.FileField(upload_to='herramientas/modelos/')
+    nombre_identificador = models.CharField(max_length=100, help_text="Nombre para identificar esta parte o variante")
+    descripcion = models.TextField(blank=True, null=True)
+    escala = models.FloatField(default=1.0)
+    rotacion_default = models.CharField(max_length=50, default='0,0,0')
+    posicion_default = models.CharField(max_length=50, default='0,0,0')
+    estado = models.BooleanField(default=True)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.id_herramienta.nombre} - {self.nombre_identificador}"
+
+    class Meta:
+        db_table = 'modelo_3d'

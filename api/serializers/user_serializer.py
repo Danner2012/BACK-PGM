@@ -9,10 +9,23 @@ class RolSerializer(serializers.ModelSerializer):
 class UsuarioSerializer(serializers.ModelSerializer):
     rol_nombre = serializers.CharField(source='id_rol.nombre', read_only=True)
     nombre_completo = serializers.SerializerMethodField()
+    perfil_id = serializers.SerializerMethodField()
     
     class Meta:
         model = Usuario
-        fields = ['id', 'correo', 'id_rol', 'rol_nombre', 'estado', 'nombre_completo']
+        fields = ['id', 'correo', 'id_rol', 'rol_nombre', 'estado', 'nombre_completo', 'perfil_id']
+
+    def get_perfil_id(self, obj):
+        try:
+            if obj.id_rol_id == 2: # administrador
+                return Administrador.objects.get(id_usuario=obj).id
+            elif obj.id_rol_id == 3: # técnico
+                return Tecnico.objects.get(id_usuario=obj).id
+            elif obj.id_rol_id == 4: # estudiante
+                return Estudiante.objects.get(id_usuario=obj).id
+        except (Administrador.DoesNotExist, Tecnico.DoesNotExist, Estudiante.DoesNotExist):
+            pass
+        return None
 
     def get_nombre_completo(self, obj):
         try:
