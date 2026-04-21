@@ -22,6 +22,24 @@ class HerramientaViewSet(viewsets.ModelViewSet):
             return HerramientaCreateUpdateSerializer
         return HerramientaSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        """Borrado lógico: desactivar en lugar de eliminar"""
+        herramienta = self.get_object()
+        herramienta.estado = False
+        herramienta.save()
+        return Response({'status': 'herramienta desactivada'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='toggle-status')
+    def toggle_status(self, request, pk=None):
+        """Endpoint para alternar entre activo/inactivo"""
+        herramienta = self.get_object()
+        herramienta.estado = not herramienta.estado
+        herramienta.save()
+        return Response({
+            'status': 'success',
+            'nuevo_estado': herramienta.estado
+        })
+
     @action(detail=True, methods=['post'], url_path='agregar-modelo')
     def agregar_modelo(self, request, pk=None):
         """Endpoint especial para subir el archivo GLB y su config"""
