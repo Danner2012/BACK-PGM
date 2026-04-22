@@ -10,37 +10,47 @@ class UsuarioSerializer(serializers.ModelSerializer):
     rol_nombre = serializers.CharField(source='id_rol.nombre', read_only=True)
     nombre_completo = serializers.SerializerMethodField()
     perfil_id = serializers.SerializerMethodField()
+    nombre = serializers.SerializerMethodField()
+    apellido_paterno = serializers.SerializerMethodField()
+    apellido_materno = serializers.SerializerMethodField()
     
     class Meta:
         model = Usuario
-        fields = ['id', 'correo', 'id_rol', 'rol_nombre', 'estado', 'nombre_completo', 'perfil_id']
+        fields = ['id', 'correo', 'id_rol', 'rol_nombre', 'estado', 'nombre_completo', 'perfil_id', 'nombre', 'apellido_paterno', 'apellido_materno']
 
-    def get_perfil_id(self, obj):
+    def get_perfil_data(self, obj):
         try:
             if obj.id_rol_id == 2: # administrador
-                return Administrador.objects.get(id_usuario=obj).id
+                return Administrador.objects.get(id_usuario=obj)
             elif obj.id_rol_id == 3: # técnico
-                return Tecnico.objects.get(id_usuario=obj).id
+                return Tecnico.objects.get(id_usuario=obj)
             elif obj.id_rol_id == 4: # estudiante
-                return Estudiante.objects.get(id_usuario=obj).id
-        except (Administrador.DoesNotExist, Tecnico.DoesNotExist, Estudiante.DoesNotExist):
-            pass
+                return Estudiante.objects.get(id_usuario=obj)
+        except:
+            return None
         return None
 
+    def get_perfil_id(self, obj):
+        perfil = self.get_perfil_data(obj)
+        return perfil.id if perfil else None
+
+    def get_nombre(self, obj):
+        perfil = self.get_perfil_data(obj)
+        return perfil.nombre if perfil else None
+
+    def get_apellido_paterno(self, obj):
+        perfil = self.get_perfil_data(obj)
+        return perfil.apellido_paterno if perfil else None
+
+    def get_apellido_materno(self, obj):
+        perfil = self.get_perfil_data(obj)
+        return perfil.apellido_materno if perfil else None
+
     def get_nombre_completo(self, obj):
-        try:
-            if obj.id_rol_id == 2: # administrador
-                perfil = Administrador.objects.get(id_usuario=obj)
-            elif obj.id_rol_id == 3: # técnico
-                perfil = Tecnico.objects.get(id_usuario=obj)
-            elif obj.id_rol_id == 4: # estudiante
-                perfil = Estudiante.objects.get(id_usuario=obj)
-            else:
-                return obj.correo # Para superadministrador u otros roles sin perfil detallado
-            
-            return f"{perfil.nombre} {perfil.apellido_paterno} {perfil.apellido_materno}".strip()
-        except (Administrador.DoesNotExist, Tecnico.DoesNotExist, Estudiante.DoesNotExist):
-            return obj.correo # Fallback si no tiene perfil creado
+        perfil = self.get_perfil_data(obj)
+        if not perfil:
+            return obj.correo
+        return f"{perfil.nombre} {perfil.apellido_paterno} {perfil.apellido_materno}".strip()
             
 class TecnicoCRUDSerializer(serializers.ModelSerializer):
     correo = serializers.EmailField(source='id_usuario.correo')
