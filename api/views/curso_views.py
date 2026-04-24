@@ -6,7 +6,7 @@ from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador
 from ..serializers.curso_serializer import (
     TipoCursoSerializer, DiaSerializer, HorarioSerializer, 
     CursoSerializer, CursoHorarioSerializer, CursoTecnicoSerializer,
-    InscripcionSerializer
+    InscripcionSerializer, PagoSerializer
 )
 
 class TipoCursoViewSet(viewsets.ModelViewSet):
@@ -119,11 +119,14 @@ class InscripcionViewSet(viewsets.ModelViewSet):
                 serializer.is_valid(raise_exception=True)
                 inscripcion = serializer.save()
 
+                # Determinar estado inicial del pago basado en el estado de la inscripción
+                estado_pago = 'pagado' if inscripcion.estado == 'confirmado' else 'pendiente'
+
                 Pago.objects.create(
                     id_inscripcion=inscripcion,
                     monto=curso.precio,
                     metodo=metodo_pago,
-                    estado='pendiente'
+                    estado=estado_pago
                 )
 
                 headers = self.get_success_headers(serializer.data)
@@ -135,20 +138,87 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         with transaction.atomic():
+            instance = self.get_object()
+            nuevo_estado = request.data.get('estado', instance.estado)
+            
+            # Validación: Si ya está cancelado, no se puede mover a ningún otro estado
+            if instance.estado == 'cancelado' and nuevo_estado != 'cancelado':
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({"error": "Esta inscripción ya fue cancelada y no puede ser reactivada. Debe crear una nueva."})
+
+            # Validación: Si se intenta cancelar, verificamos que no esté pagado
+            if nuevo_estado == 'cancelado':
+                pago = Pago.objects.filter(id_inscripcion=instance).first()
+                if pago and pago.estado == 'pagado':
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError({"error": "No se puede cancelar una inscripción que ya ha sido pagada."})
+
+            # Validación: Solo se puede confirmar si estaba pendiente
+            if nuevo_estado == 'confirmado' and instance.estado != 'pendiente' and instance.estado != 'confirmado':
+                 from rest_framework.exceptions import ValidationError
+                 raise ValidationError({"error": "Solo se pueden confirmar inscripciones que estén en estado pendiente."})
+
+            # Si se intenta confirmar (desde pendiente), validamos cupo nuevamente
+            if nuevo_estado == 'confirmado' and instance.estado == 'pendiente':
+                curso = instance.id_curso
+                inscritos_confirmados = Inscripcion.objects.filter(
+                    id_curso=curso, 
+                    estado='confirmado'
+                ).count()
+                
+                if inscritos_confirmados >= curso.cupo_maximo:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError({"error": f"No se puede confirmar. El curso '{curso.nombre}' ya alcanzó su cupo máximo ({curso.cupo_maximo})."})
+
+            # Ejecutar la actualización normal
             response = super().update(request, *args, **kwargs)
+            
+            # Sincronizar el Pago según el nuevo estado de la Inscripción
             inscripcion = self.get_object()
             if inscripcion.estado == 'confirmado':
                 Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pagado')
             elif inscripcion.estado == 'cancelado':
+                Pago.objects.filter(id_inscripcion=inscripcion).update(estado='cancelado')
+            elif inscripcion.estado == 'pendiente':
                 Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pendiente')
+                
             return response
 
     def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+class PagoViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Pago.objects.all()
+    serializer_class = PagoSerializer
+
+    def update(self, request, *args, **kwargs):
         with transaction.atomic():
-            response = super().partial_update(request, *args, **kwargs)
-            inscripcion = self.get_object()
-            if inscripcion.estado == 'confirmado':
-                Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pagado')
-            elif inscripcion.estado == 'cancelado':
-                Pago.objects.filter(id_inscripcion=inscripcion).update(estado='pendiente')
-            return response
+            instance = self.get_object()
+            nuevo_estado = request.data.get('estado', instance.estado)
+            inscripcion = instance.id_inscripcion
+
+            # Si el pago pasa a 'pagado', confirmamos la inscripción automáticamente
+            if nuevo_estado == 'pagado' and instance.estado != 'pagado':
+                if inscripcion.estado != 'confirmado':
+                    curso = inscripcion.id_curso
+                    inscritos = Inscripcion.objects.filter(id_curso=curso, estado='confirmado').count()
+                    
+                    if inscritos >= curso.cupo_maximo:
+                        from rest_framework.exceptions import ValidationError
+                        raise ValidationError({"error": f"No se puede registrar el pago. El curso '{curso.nombre}' ya está lleno."})
+                    
+                    inscripcion.estado = 'confirmado'
+                    inscripcion.save()
+            
+            # Si el pago se cancela, cancelamos la inscripción
+            elif nuevo_estado == 'cancelado' and instance.estado != 'cancelado':
+                inscripcion.estado = 'cancelado'
+                inscripcion.save()
+
+            return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)

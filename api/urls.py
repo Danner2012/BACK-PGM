@@ -6,7 +6,7 @@ from api.views.user_views import UserProfileView, TecnicoViewSet, EstudianteView
 from api.views.curso_views import (
     TipoCursoViewSet, DiaViewSet, HorarioViewSet, 
     CursoViewSet, CursoHorarioViewSet, CursoTecnicoViewSet,
-    InscripcionViewSet
+    InscripcionViewSet, PagoViewSet
 )
 from api.views.herramienta_views import (
     CategoriaHerramientaViewSet,
@@ -24,6 +24,7 @@ router.register(r'cursos', CursoViewSet, basename='curso')
 router.register(r'curso-horarios', CursoHorarioViewSet, basename='curso-horario')
 router.register(r'curso-tecnicos', CursoTecnicoViewSet, basename='curso-tecnico')
 router.register(r'inscripciones', InscripcionViewSet, basename='inscripcion')
+router.register(r'pagos', PagoViewSet, basename='pago')
 router.register(r'categorias-herramientas', CategoriaHerramientaViewSet, basename='categoria-herramienta')
 router.register(r'herramientas', HerramientaViewSet, basename='herramienta')
 router.register(r'modelos-3d', Modelo3DViewSet, basename='modelo-3d')
