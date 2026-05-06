@@ -2,8 +2,50 @@ from django.contrib import admin
 from .models import (
     Rol, Usuario, Administrador, Tecnico, Estudiante, 
     TipoCurso, Curso, CursoTecnico, Dia, Horario, 
-    CursoHorario, Inscripcion, Pago
+    CursoHorario, Inscripcion, Pago, Herramienta, CategoriaHerramienta,
+    Modelo3D, TipoRecurso, Practica, RecursoPractica,
+    PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta
 )
+
+@admin.register(CategoriaHerramienta)
+class CategoriaHerramientaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'estado')
+
+@admin.register(Herramienta)
+class HerramientaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'id_categoria', 'stock_total', 'stock_disponible', 'estado')
+    list_filter = ('estado', 'id_categoria')
+    search_fields = ('nombre',)
+
+@admin.register(Modelo3D)
+class Modelo3DAdmin(admin.ModelAdmin):
+    list_display = ('id', 'id_herramienta', 'nombre_identificador', 'estado')
+
+@admin.register(TipoRecurso)
+class TipoRecursoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre')
+
+@admin.register(Practica)
+class PracticaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'titulo', 'id_curso', 'orden', 'estado')
+    list_filter = ('id_curso', 'estado')
+
+@admin.register(RecursoPractica)
+class RecursoPracticaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'titulo', 'id_practica', 'id_tipo_recurso', 'orden', 'estado')
+
+@admin.register(PracticaHerramienta)
+class PracticaHerramientaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'id_practica', 'id_herramienta', 'cantidad_requerida')
+
+@admin.register(PrestamoHerramienta)
+class PrestamoHerramientaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'id_inscripcion', 'id_practica', 'id_herramienta', 'cantidad_prestada', 'estado', 'fecha_prestamo')
+    list_filter = ('estado', 'fecha_prestamo')
+
+@admin.register(DevolucionHerramienta)
+class DevolucionHerramientaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'id_prestamo', 'id_tecnico_receptor', 'cantidad_devuelta', 'fecha_devolucion')
 
 @admin.register(Rol)
 class RolAdmin(admin.ModelAdmin):

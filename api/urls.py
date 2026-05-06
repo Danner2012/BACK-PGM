@@ -13,6 +13,10 @@ from api.views.herramienta_views import (
     HerramientaViewSet,
     Modelo3DViewSet
 )
+from api.views.practica_views import (
+    TipoRecursoViewSet, PracticaViewSet, RecursoPracticaViewSet,
+    PracticaHerramientaViewSet, PrestamoHerramientaViewSet, DevolucionHerramientaViewSet
+)
 
 router = DefaultRouter()
 router.register(r'tecnicos', TecnicoViewSet, basename='tecnico')
@@ -28,6 +32,12 @@ router.register(r'pagos', PagoViewSet, basename='pago')
 router.register(r'categorias-herramientas', CategoriaHerramientaViewSet, basename='categoria-herramienta')
 router.register(r'herramientas', HerramientaViewSet, basename='herramienta')
 router.register(r'modelos-3d', Modelo3DViewSet, basename='modelo-3d')
+router.register(r'tipos-recurso', TipoRecursoViewSet, basename='tipo-recurso')
+router.register(r'practicas', PracticaViewSet, basename='practica')
+router.register(r'recursos-practica', RecursoPracticaViewSet, basename='recurso-practica')
+router.register(r'practica-herramientas', PracticaHerramientaViewSet, basename='practica-herramienta')
+router.register(r'prestamos-herramientas', PrestamoHerramientaViewSet, basename='prestamo-herramienta')
+router.register(r'devoluciones-herramientas', DevolucionHerramientaViewSet, basename='devolucion-herramienta')
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),

@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.exceptions import ValidationError
+from django.utils.text import slugify
 
 class Rol(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
@@ -53,8 +55,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
-
-from django.core.exceptions import ValidationError
 
 class Administrador(models.Model):
     id_usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, db_column='id_usuario', related_name='administrador')
@@ -200,8 +200,6 @@ class CategoriaHerramienta(models.Model):
     class Meta:
         db_table = 'categoria_herramienta'
 
-from django.utils.text import slugify
-
 class Herramienta(models.Model):
     id_administrador = models.ForeignKey(Administrador, on_delete=models.PROTECT, db_column='id_administrador')
     id_categoria = models.ForeignKey(CategoriaHerramienta, on_delete=models.SET_NULL, null=True, db_column='id_categoria')
@@ -211,6 +209,8 @@ class Herramienta(models.Model):
     uso = models.TextField()
     info_importante = models.TextField()
     imagen_previa = models.ImageField(upload_to='herramientas/fotos/', null=True, blank=True)
+    stock_total = models.PositiveIntegerField(default=0)
+    stock_disponible = models.PositiveIntegerField(default=0)
     estado = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
@@ -242,3 +242,124 @@ class Modelo3D(models.Model):
 
     class Meta:
         db_table = 'modelo_3d'
+
+class TipoRecurso(models.Model):
+    nombre = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        db_table = 'tipo_recurso'
+
+class Practica(models.Model):
+    id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE, db_column='id_curso')
+    titulo = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    orden = models.IntegerField()
+    estado = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.id_curso.nombre} - {self.titulo}"
+
+    class Meta:
+        db_table = 'practica'
+        unique_together = ('id_curso', 'orden')
+
+class RecursoPractica(models.Model):
+    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    id_tipo_recurso = models.ForeignKey(TipoRecurso, on_delete=models.CASCADE, db_column='id_tipo_recurso')
+    titulo = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    archivo_local = models.FileField(upload_to='practicas/recursos/', null=True, blank=True)
+    url_externa = models.URLField(null=True, blank=True)
+    orden = models.IntegerField()
+    estado = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.titulo
+
+    class Meta:
+        db_table = 'recurso_practica'
+
+class PracticaHerramienta(models.Model):
+    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    id_herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE, db_column='id_herramienta')
+    cantidad_requerida = models.IntegerField()
+
+    class Meta:
+        db_table = 'practica_herramienta'
+        unique_together = ('id_practica', 'id_herramienta')
+
+class PrestamoHerramienta(models.Model):
+    ESTADO_CHOICES = [
+        ('prestado', 'Prestado'),
+        ('parcial', 'Parcial'),
+        ('devuelto', 'Devuelto')
+    ]
+    id_inscripcion = models.ForeignKey(Inscripcion, on_delete=models.CASCADE, db_column='id_inscripcion')
+    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    id_herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE, db_column='id_herramienta')
+    id_tecnico = models.ForeignKey(Tecnico, on_delete=models.CASCADE, db_column='id_tecnico')
+    cantidad_prestada = models.IntegerField()
+    fecha_prestamo = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='prestado')
+    observacion = models.TextField(null=True, blank=True)
+    activo = models.BooleanField(default=True)
+
+    def clean(self):
+        if self.pk is None: 
+            if self.id_herramienta.stock_disponible < self.cantidad_prestada:
+                raise ValidationError(f"No hay suficiente stock disponible. Disponible: {self.id_herramienta.stock_disponible}")
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        if is_new:
+            self.id_herramienta.stock_disponible -= self.cantidad_prestada
+            self.id_herramienta.save()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'prestamo_herramienta'
+        unique_together = ('id_inscripcion', 'id_practica', 'id_herramienta')
+
+class DevolucionHerramienta(models.Model):
+    id_prestamo = models.ForeignKey(PrestamoHerramienta, on_delete=models.CASCADE, db_column='id_prestamo', related_name='devoluciones')
+    id_tecnico_receptor = models.ForeignKey(Tecnico, on_delete=models.CASCADE, db_column='id_tecnico_receptor')
+    cantidad_devuelta = models.IntegerField()
+    fecha_devolucion = models.DateTimeField(auto_now_add=True)
+    observacion = models.TextField(null=True, blank=True)
+
+    def clean(self):
+        if not self.id_prestamo_id:
+            return
+        total_devuelto = sum(d.cantidad_devuelta for d in self.id_prestamo.devoluciones.all())
+        if self.pk:
+            original = DevolucionHerramienta.objects.get(pk=self.pk)
+            total_devuelto -= original.cantidad_devuelta
+        
+        if total_devuelto + self.cantidad_devuelta > self.id_prestamo.cantidad_prestada:
+            raise ValidationError("La cantidad total devuelta no puede superar la cantidad prestada.")
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        if is_new:
+            herramienta = self.id_prestamo.id_herramienta
+            herramienta.stock_disponible += self.cantidad_devuelta
+            herramienta.save()
+            
+            super().save(*args, **kwargs)
+            
+            total_devuelto = sum(d.cantidad_devuelta for d in self.id_prestamo.devoluciones.all())
+            if total_devuelto >= self.id_prestamo.cantidad_prestada:
+                self.id_prestamo.estado = 'devuelto'
+            elif total_devuelto > 0:
+                self.id_prestamo.estado = 'parcial'
+            else:
+                self.id_prestamo.estado = 'prestado'
+            self.id_prestamo.save()
+        else:
+            super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'devolucion_herramienta'
