@@ -16,6 +16,21 @@ class PracticaViewSet(viewsets.ModelViewSet):
     queryset = Practica.objects.all()
     serializer_class = PracticaSerializer
 
+    @action(detail=False, methods=['get'])
+    def mis_practicas(self, request):
+        if not hasattr(request.user, 'estudiante'):
+            return Response({'error': 'Solo los estudiantes pueden acceder a esta vista'}, status=status.HTTP_403_FORBIDDEN)
+        
+        estudiante = request.user.estudiante
+        practicas = Practica.objects.filter(
+            id_curso__inscripcion__id_estudiante=estudiante,
+            id_curso__inscripcion__estado='confirmado', # O el estado que consideres como inscrito activamente
+            estado=True
+        ).distinct().order_by('id_curso', 'id')
+        
+        serializer = self.get_serializer(practicas, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'])
     def toggle_status(self, request, pk=None):
         practica = self.get_object()

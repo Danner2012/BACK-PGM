@@ -27,12 +27,12 @@ class TipoRecursoAdmin(admin.ModelAdmin):
 
 @admin.register(Practica)
 class PracticaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'titulo', 'id_curso', 'orden', 'estado')
+    list_display = ('id', 'titulo', 'id_curso', 'estado')
     list_filter = ('id_curso', 'estado')
 
 @admin.register(RecursoPractica)
 class RecursoPracticaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'titulo', 'id_practica', 'id_tipo_recurso', 'orden', 'estado')
+    list_display = ('id', 'titulo', 'id_practica', 'id_tipo_recurso', 'estado')
 
 @admin.register(PracticaHerramienta)
 class PracticaHerramientaAdmin(admin.ModelAdmin):

@@ -256,7 +256,6 @@ class Practica(models.Model):
     id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE, db_column='id_curso')
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
-    orden = models.IntegerField()
     estado = models.BooleanField(default=True)
 
     def __str__(self):
@@ -264,7 +263,6 @@ class Practica(models.Model):
 
     class Meta:
         db_table = 'practica'
-        unique_together = ('id_curso', 'orden')
 
 class RecursoPractica(models.Model):
     id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
@@ -273,7 +271,6 @@ class RecursoPractica(models.Model):
     descripcion = models.TextField()
     archivo_local = models.FileField(upload_to='practicas/recursos/', null=True, blank=True)
     url_externa = models.URLField(null=True, blank=True)
-    orden = models.IntegerField()
     estado = models.BooleanField(default=True)
 
     def __str__(self):
