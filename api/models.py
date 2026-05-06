@@ -275,7 +275,7 @@ class Practica(models.Model):
         db_table = 'practica'
 
 class RecursoPractica(models.Model):
-    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica', related_name='recursos')
     id_tipo_recurso = models.ForeignKey(TipoRecurso, on_delete=models.CASCADE, db_column='id_tipo_recurso')
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
@@ -290,7 +290,7 @@ class RecursoPractica(models.Model):
         db_table = 'recurso_practica'
 
 class PracticaHerramienta(models.Model):
-    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica', related_name='herramientas')
     id_herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE, db_column='id_herramienta')
     cantidad_requerida = models.IntegerField()
 

@@ -20,16 +20,25 @@ class RecursoPracticaSerializer(serializers.ModelSerializer):
 
 class PracticaHerramientaSerializer(serializers.ModelSerializer):
     herramienta_nombre = serializers.ReadOnlyField(source='id_herramienta.nombre')
+    imagen_previa = serializers.ImageField(source='id_herramienta.imagen_previa', read_only=True)
+    modelos_3d = serializers.SerializerMethodField()
+    descripcion_herramienta = serializers.ReadOnlyField(source='id_herramienta.descripcion')
+    uso_herramienta = serializers.ReadOnlyField(source='id_herramienta.uso')
+    seguridad_herramienta = serializers.ReadOnlyField(source='id_herramienta.info_importante')
     
     class Meta:
         model = PracticaHerramienta
         fields = '__all__'
 
+    def get_modelos_3d(self, obj):
+        from .herramienta_serializer import Modelo3DSerializer
+        return Modelo3DSerializer(obj.id_herramienta.modelos_3d.all(), many=True).data
+
 class PracticaSerializer(serializers.ModelSerializer):
     curso_nombre = serializers.ReadOnlyField(source='id_curso.nombre')
     tipo_practica_nombre = serializers.ReadOnlyField(source='id_tipo_practica.nombre')
-    recursos = RecursoPracticaSerializer(many=True, read_only=True, source='recursopractica_set')
-    herramientas = PracticaHerramientaSerializer(many=True, read_only=True, source='practicaherramienta_set')
+    recursos = RecursoPracticaSerializer(many=True, read_only=True)
+    herramientas = PracticaHerramientaSerializer(many=True, read_only=True)
     
     class Meta:
         model = Practica
