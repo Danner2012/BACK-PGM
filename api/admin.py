@@ -3,7 +3,7 @@ from .models import (
     Rol, Usuario, Administrador, Tecnico, Estudiante, 
     TipoCurso, Curso, CursoTecnico, Dia, Horario, 
     CursoHorario, Inscripcion, Pago, Herramienta, CategoriaHerramienta,
-    Modelo3D, TipoRecurso, Practica, RecursoPractica,
+    Modelo3D, TipoRecurso, TipoPractica, Practica, RecursoPractica,
     PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta
 )
 
@@ -25,10 +25,14 @@ class Modelo3DAdmin(admin.ModelAdmin):
 class TipoRecursoAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre')
 
+@admin.register(TipoPractica)
+class TipoPracticaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre')
+
 @admin.register(Practica)
 class PracticaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'titulo', 'id_curso', 'estado')
-    list_filter = ('id_curso', 'estado')
+    list_display = ('id', 'titulo', 'id_curso', 'id_tipo_practica', 'estado')
+    list_filter = ('id_curso', 'id_tipo_practica', 'estado')
 
 @admin.register(RecursoPractica)
 class RecursoPracticaAdmin(admin.ModelAdmin):

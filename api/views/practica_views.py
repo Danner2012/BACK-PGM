@@ -2,15 +2,19 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db import transaction
-from ..models import Practica, TipoRecurso, RecursoPractica, PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta
+from ..models import Practica, TipoRecurso, TipoPractica, RecursoPractica, PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta
 from ..serializers.practica_serializer import (
-    PracticaSerializer, TipoRecursoSerializer, RecursoPracticaSerializer,
+    PracticaSerializer, TipoRecursoSerializer, TipoPracticaSerializer, RecursoPracticaSerializer,
     PracticaHerramientaSerializer, PrestamoHerramientaSerializer, DevolucionHerramientaSerializer
 )
 
 class TipoRecursoViewSet(viewsets.ModelViewSet):
     queryset = TipoRecurso.objects.all()
     serializer_class = TipoRecursoSerializer
+
+class TipoPracticaViewSet(viewsets.ModelViewSet):
+    queryset = TipoPractica.objects.all()
+    serializer_class = TipoPracticaSerializer
 
 class PracticaViewSet(viewsets.ModelViewSet):
     queryset = Practica.objects.all()

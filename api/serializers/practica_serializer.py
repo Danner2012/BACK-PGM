@@ -1,9 +1,14 @@
 from rest_framework import serializers
-from ..models import Practica, TipoRecurso, RecursoPractica, PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta, Herramienta
+from ..models import Practica, TipoRecurso, TipoPractica, RecursoPractica, PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta, Herramienta
 
 class TipoRecursoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoRecurso
+        fields = '__all__'
+
+class TipoPracticaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoPractica
         fields = '__all__'
 
 class RecursoPracticaSerializer(serializers.ModelSerializer):
@@ -22,6 +27,7 @@ class PracticaHerramientaSerializer(serializers.ModelSerializer):
 
 class PracticaSerializer(serializers.ModelSerializer):
     curso_nombre = serializers.ReadOnlyField(source='id_curso.nombre')
+    tipo_practica_nombre = serializers.ReadOnlyField(source='id_tipo_practica.nombre')
     recursos = RecursoPracticaSerializer(many=True, read_only=True, source='recursopractica_set')
     herramientas = PracticaHerramientaSerializer(many=True, read_only=True, source='practicaherramienta_set')
     

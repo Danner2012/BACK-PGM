@@ -14,7 +14,7 @@ from api.views.herramienta_views import (
     Modelo3DViewSet
 )
 from api.views.practica_views import (
-    TipoRecursoViewSet, PracticaViewSet, RecursoPracticaViewSet,
+    TipoRecursoViewSet, TipoPracticaViewSet, PracticaViewSet, RecursoPracticaViewSet,
     PracticaHerramientaViewSet, PrestamoHerramientaViewSet, DevolucionHerramientaViewSet
 )
 
@@ -33,6 +33,7 @@ router.register(r'categorias-herramientas', CategoriaHerramientaViewSet, basenam
 router.register(r'herramientas', HerramientaViewSet, basename='herramienta')
 router.register(r'modelos-3d', Modelo3DViewSet, basename='modelo-3d')
 router.register(r'tipos-recurso', TipoRecursoViewSet, basename='tipo-recurso')
+router.register(r'tipos-practica', TipoPracticaViewSet, basename='tipo-practica')
 router.register(r'practicas', PracticaViewSet, basename='practica')
 router.register(r'recursos-practica', RecursoPracticaViewSet, basename='recurso-practica')
 router.register(r'practica-herramientas', PracticaHerramientaViewSet, basename='practica-herramienta')
