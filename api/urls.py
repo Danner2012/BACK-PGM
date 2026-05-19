@@ -15,7 +15,7 @@ from api.views.herramienta_views import (
 )
 from api.views.practica_views import (
     TipoRecursoViewSet, TipoPracticaViewSet, PracticaViewSet, RecursoPracticaViewSet,
-    PracticaHerramientaViewSet, PrestamoHerramientaViewSet, DevolucionHerramientaViewSet
+    PracticaHerramientaViewSet, PrestamoViewSet, PrestamoDetalleViewSet, DevolucionHerramientaViewSet
 )
 
 router = DefaultRouter()
@@ -37,7 +37,8 @@ router.register(r'tipos-practica', TipoPracticaViewSet, basename='tipo-practica'
 router.register(r'practicas', PracticaViewSet, basename='practica')
 router.register(r'recursos-practica', RecursoPracticaViewSet, basename='recurso-practica')
 router.register(r'practica-herramientas', PracticaHerramientaViewSet, basename='practica-herramienta')
-router.register(r'prestamos-herramientas', PrestamoHerramientaViewSet, basename='prestamo-herramienta')
+router.register(r'prestamos', PrestamoViewSet, basename='prestamo')
+router.register(r'detalles-prestamos', PrestamoDetalleViewSet, basename='prestamo-detalle')
 router.register(r'devoluciones-herramientas', DevolucionHerramientaViewSet, basename='devolucion-herramienta')
 
 urlpatterns = [

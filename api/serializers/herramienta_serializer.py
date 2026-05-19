@@ -24,7 +24,8 @@ class HerramientaSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'id_categoria', 'categoria_info', 'id_administrador', 
             'nombre', 'slug', 'descripcion', 'uso', 'info_importante', 
-            'imagen_previa', 'estado', 'modelos_3d', 'fecha_creacion', 'fecha_actualizacion'
+            'imagen_previa', 'stock_total', 'stock_disponible', 'estado', 
+            'modelos_3d', 'fecha_creacion', 'fecha_actualizacion'
         ]
 
 class HerramientaCreateUpdateSerializer(serializers.ModelSerializer):

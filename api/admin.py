@@ -4,7 +4,7 @@ from .models import (
     TipoCurso, Curso, CursoTecnico, Dia, Horario, 
     CursoHorario, Inscripcion, Pago, Herramienta, CategoriaHerramienta,
     Modelo3D, TipoRecurso, TipoPractica, Practica, RecursoPractica,
-    PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta
+    PracticaHerramienta, Prestamo, PrestamoDetalle, DevolucionHerramienta
 )
 
 @admin.register(CategoriaHerramienta)
@@ -42,14 +42,19 @@ class RecursoPracticaAdmin(admin.ModelAdmin):
 class PracticaHerramientaAdmin(admin.ModelAdmin):
     list_display = ('id', 'id_practica', 'id_herramienta', 'cantidad_requerida')
 
-@admin.register(PrestamoHerramienta)
-class PrestamoHerramientaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'id_inscripcion', 'id_practica', 'id_herramienta', 'cantidad_prestada', 'estado', 'fecha_prestamo')
-    list_filter = ('estado', 'fecha_prestamo')
+@admin.register(Prestamo)
+class PrestamoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'id_inscripcion', 'id_practica', 'id_tecnico', 'fecha_prestamo', 'activo')
+    list_filter = ('fecha_prestamo', 'activo')
+
+@admin.register(PrestamoDetalle)
+class PrestamoDetalleAdmin(admin.ModelAdmin):
+    list_display = ('id', 'id_prestamo', 'id_herramienta', 'cantidad_prestada', 'estado')
+    list_filter = ('estado',)
 
 @admin.register(DevolucionHerramienta)
 class DevolucionHerramientaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'id_prestamo', 'id_tecnico_receptor', 'cantidad_devuelta', 'fecha_devolucion')
+    list_display = ('id', 'id_prestamo_detalle', 'id_tecnico_receptor', 'cantidad_devuelta', 'fecha_devolucion')
 
 @admin.register(Rol)
 class RolAdmin(admin.ModelAdmin):

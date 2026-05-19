@@ -298,73 +298,85 @@ class PracticaHerramienta(models.Model):
         db_table = 'practica_herramienta'
         unique_together = ('id_practica', 'id_herramienta')
 
-class PrestamoHerramienta(models.Model):
+class Prestamo(models.Model):
+    id_inscripcion = models.ForeignKey(Inscripcion, on_delete=models.CASCADE, db_column='id_inscripcion')
+    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    id_tecnico = models.ForeignKey(Tecnico, on_delete=models.CASCADE, db_column='id_tecnico')
+    fecha_prestamo = models.DateTimeField(auto_now_add=True)
+    observacion = models.TextField(null=True, blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'prestamo'
+
+class PrestamoDetalle(models.Model):
     ESTADO_CHOICES = [
         ('prestado', 'Prestado'),
         ('parcial', 'Parcial'),
         ('devuelto', 'Devuelto')
     ]
-    id_inscripcion = models.ForeignKey(Inscripcion, on_delete=models.CASCADE, db_column='id_inscripcion')
-    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    id_prestamo = models.ForeignKey(Prestamo, on_delete=models.CASCADE, db_column='id_prestamo', related_name='detalles')
     id_herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE, db_column='id_herramienta')
-    id_tecnico = models.ForeignKey(Tecnico, on_delete=models.CASCADE, db_column='id_tecnico')
     cantidad_prestada = models.IntegerField()
-    fecha_prestamo = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='prestado')
-    observacion = models.TextField(null=True, blank=True)
-    activo = models.BooleanField(default=True)
 
     def clean(self):
         if self.pk is None: 
             if self.id_herramienta.stock_disponible < self.cantidad_prestada:
-                raise ValidationError(f"No hay suficiente stock disponible. Disponible: {self.id_herramienta.stock_disponible}")
+                raise ValidationError(f"No hay suficiente stock para {self.id_herramienta.nombre}. Disponible: {self.id_herramienta.stock_disponible}")
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        if is_new:
+        if self.pk is None:
             self.id_herramienta.stock_disponible -= self.cantidad_prestada
             self.id_herramienta.save()
         super().save(*args, **kwargs)
 
     class Meta:
-        db_table = 'prestamo_herramienta'
-        unique_together = ('id_inscripcion', 'id_practica', 'id_herramienta')
+        db_table = 'prestamo_detalle'
+        unique_together = ('id_prestamo', 'id_herramienta')
 
 class DevolucionHerramienta(models.Model):
-    id_prestamo = models.ForeignKey(PrestamoHerramienta, on_delete=models.CASCADE, db_column='id_prestamo', related_name='devoluciones')
+    id_prestamo_detalle = models.ForeignKey(PrestamoDetalle, on_delete=models.CASCADE, db_column='id_prestamo_detalle', related_name='devoluciones')
     id_tecnico_receptor = models.ForeignKey(Tecnico, on_delete=models.CASCADE, db_column='id_tecnico_receptor')
     cantidad_devuelta = models.IntegerField()
     fecha_devolucion = models.DateTimeField(auto_now_add=True)
     observacion = models.TextField(null=True, blank=True)
 
     def clean(self):
-        if not self.id_prestamo_id:
+        if not self.id_prestamo_detalle_id:
             return
-        total_devuelto = sum(d.cantidad_devuelta for d in self.id_prestamo.devoluciones.all())
+        total_devuelto = sum(d.cantidad_devuelta for d in self.id_prestamo_detalle.devoluciones.all())
         if self.pk:
             original = DevolucionHerramienta.objects.get(pk=self.pk)
             total_devuelto -= original.cantidad_devuelta
         
-        if total_devuelto + self.cantidad_devuelta > self.id_prestamo.cantidad_prestada:
+        if total_devuelto + self.cantidad_devuelta > self.id_prestamo_detalle.cantidad_prestada:
             raise ValidationError("La cantidad total devuelta no puede superar la cantidad prestada.")
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        if is_new:
-            herramienta = self.id_prestamo.id_herramienta
+        if self.pk is None:
+            # 1. Actualizar stock físico de la herramienta
+            herramienta = self.id_prestamo_detalle.id_herramienta
             herramienta.stock_disponible += self.cantidad_devuelta
             herramienta.save()
             
+            # 2. Guardar la devolución
             super().save(*args, **kwargs)
             
-            total_devuelto = sum(d.cantidad_devuelta for d in self.id_prestamo.devoluciones.all())
-            if total_devuelto >= self.id_prestamo.cantidad_prestada:
-                self.id_prestamo.estado = 'devuelto'
+            # 3. Recalcular y actualizar estado del detalle del préstamo
+            # Sumamos todas las devoluciones confirmadas para este detalle
+            total_devuelto = DevolucionHerramienta.objects.filter(
+                id_prestamo_detalle=self.id_prestamo_detalle
+            ).aggregate(total=models.Sum('cantidad_devuelta'))['total'] or 0
+            
+            if total_devuelto >= self.id_prestamo_detalle.cantidad_prestada:
+                self.id_prestamo_detalle.estado = 'devuelto'
             elif total_devuelto > 0:
-                self.id_prestamo.estado = 'parcial'
+                self.id_prestamo_detalle.estado = 'parcial'
             else:
-                self.id_prestamo.estado = 'prestado'
-            self.id_prestamo.save()
+                self.id_prestamo_detalle.estado = 'prestado'
+            
+            self.id_prestamo_detalle.save()
         else:
             super().save(*args, **kwargs)
 

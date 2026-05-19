@@ -2,10 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db import transaction
-from ..models import Practica, TipoRecurso, TipoPractica, RecursoPractica, PracticaHerramienta, PrestamoHerramienta, DevolucionHerramienta
+from ..models import (
+    Practica, TipoRecurso, TipoPractica, RecursoPractica, 
+    PracticaHerramienta, Prestamo, PrestamoDetalle, DevolucionHerramienta
+)
 from ..serializers.practica_serializer import (
     PracticaSerializer, TipoRecursoSerializer, TipoPracticaSerializer, RecursoPracticaSerializer,
-    PracticaHerramientaSerializer, PrestamoHerramientaSerializer, DevolucionHerramientaSerializer
+    PracticaHerramientaSerializer, PrestamoSerializer, PrestamoDetalleSerializer, DevolucionHerramientaSerializer
 )
 
 class TipoRecursoViewSet(viewsets.ModelViewSet):
@@ -28,7 +31,7 @@ class PracticaViewSet(viewsets.ModelViewSet):
         estudiante = request.user.estudiante
         practicas = Practica.objects.filter(
             id_curso__inscripcion__id_estudiante=estudiante,
-            id_curso__inscripcion__estado='confirmado', # O el estado que consideres como inscrito activamente
+            id_curso__inscripcion__estado='confirmado',
             estado=True
         ).distinct().order_by('id_curso', 'id')
         
@@ -70,15 +73,28 @@ class PracticaHerramientaViewSet(viewsets.ModelViewSet):
     queryset = PracticaHerramienta.objects.all()
     serializer_class = PracticaHerramientaSerializer
 
-class PrestamoHerramientaViewSet(viewsets.ModelViewSet):
-    queryset = PrestamoHerramienta.objects.filter(activo=True)
-    serializer_class = PrestamoHerramientaSerializer
+class PrestamoViewSet(viewsets.ModelViewSet):
+    serializer_class = PrestamoSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Prestamo.objects.filter(activo=True).order_by('-fecha_prestamo')
+        
+        # Si es estudiante, solo ve sus propios préstamos
+        if hasattr(user, 'estudiante'):
+            queryset = queryset.filter(id_inscripcion__id_estudiante=user.estudiante)
+        
+        return queryset
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.activo = False
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class PrestamoDetalleViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PrestamoDetalle.objects.all()
+    serializer_class = PrestamoDetalleSerializer
 
 class DevolucionHerramientaViewSet(viewsets.ModelViewSet):
     queryset = DevolucionHerramienta.objects.all()
