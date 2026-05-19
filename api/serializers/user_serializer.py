@@ -13,10 +13,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
     nombre = serializers.SerializerMethodField()
     apellido_paterno = serializers.SerializerMethodField()
     apellido_materno = serializers.SerializerMethodField()
+    ci = serializers.SerializerMethodField()
     
     class Meta:
         model = Usuario
-        fields = ['id', 'correo', 'id_rol', 'rol_nombre', 'estado', 'nombre_completo', 'perfil_id', 'nombre', 'apellido_paterno', 'apellido_materno']
+        fields = ['id', 'correo', 'id_rol', 'rol_nombre', 'estado', 'nombre_completo', 'perfil_id', 'nombre', 'apellido_paterno', 'apellido_materno', 'ci']
 
     def get_perfil_data(self, obj):
         try:
@@ -33,6 +34,10 @@ class UsuarioSerializer(serializers.ModelSerializer):
     def get_perfil_id(self, obj):
         perfil = self.get_perfil_data(obj)
         return perfil.id if perfil else None
+
+    def get_ci(self, obj):
+        perfil = self.get_perfil_data(obj)
+        return perfil.ci if perfil and hasattr(perfil, 'ci') else None
 
     def get_nombre(self, obj):
         perfil = self.get_perfil_data(obj)
