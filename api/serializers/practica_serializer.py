@@ -21,6 +21,7 @@ class PracticaEstudianteSerializer(serializers.ModelSerializer):
 
     def get_practica_detalle(self, obj):
         return {
+            'id_curso': obj.id_practica.id_curso.id,
             'titulo': obj.id_practica.titulo,
             'descripcion': obj.id_practica.descripcion,
             'curso_nombre': obj.id_practica.id_curso.nombre
@@ -68,10 +69,24 @@ class PracticaSerializer(serializers.ModelSerializer):
     tipo_practica_nombre = serializers.ReadOnlyField(source='id_tipo_practica.nombre')
     recursos = RecursoPracticaSerializer(many=True, read_only=True)
     herramientas = PracticaHerramientaSerializer(many=True, read_only=True)
+    usuario_creador_nombre = serializers.SerializerMethodField()
     
     class Meta:
         model = Practica
         fields = '__all__'
+
+    def get_usuario_creador_nombre(self, obj):
+        if not obj.id_usuario_creador:
+            return "N/A"
+        
+        user = obj.id_usuario_creador
+        if hasattr(user, 'administrador'):
+            a = user.administrador
+            return f"{a.nombre} {a.apellido_paterno} (Admin)".strip()
+        elif hasattr(user, 'tecnico'):
+            t = user.tecnico
+            return f"{t.nombre} {t.apellido_paterno} (Técnico)".strip()
+        return user.correo
 
 class DevolucionHerramientaSerializer(serializers.ModelSerializer):
     tecnico_receptor_nombre = serializers.SerializerMethodField()

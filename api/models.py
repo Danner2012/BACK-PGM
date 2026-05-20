@@ -264,6 +264,7 @@ class TipoPractica(models.Model):
 class Practica(models.Model):
     id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE, db_column='id_curso')
     id_tipo_practica = models.ForeignKey(TipoPractica, on_delete=models.PROTECT, db_column='id_tipo_practica', null=True)
+    id_usuario_creador = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, db_column='id_usuario_creador')
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
     estado = models.BooleanField(default=True)

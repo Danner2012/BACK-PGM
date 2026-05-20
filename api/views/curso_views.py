@@ -1,8 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from django.db import transaction
-from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Inscripcion, Pago
+from ..models import TipoCurso, Dia, Horario, Curso, CursoHorario, Administrador, CursoTecnico, Inscripcion, Pago, Tecnico
 from ..serializers.curso_serializer import (
     TipoCursoSerializer, DiaSerializer, HorarioSerializer, 
     CursoSerializer, CursoHorarioSerializer, CursoTecnicoSerializer,
@@ -28,6 +29,17 @@ class CursoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Curso.objects.all()
     serializer_class = CursoSerializer
+
+    @action(detail=False, methods=['get'], url_path='mis-cursos-tecnico')
+    def mis_cursos_tecnico(self, request):
+        try:
+            tecnico = Tecnico.objects.get(id_usuario=request.user)
+            asignaciones = CursoTecnico.objects.filter(id_tecnico=tecnico, estado='activo')
+            cursos = [a.id_curso for a in asignaciones]
+            serializer = self.get_serializer(cursos, many=True)
+            return Response(serializer.data)
+        except Tecnico.DoesNotExist:
+            return Response({"error": "No se encontró perfil de técnico para este usuario."}, status=404)
 
     def perform_create(self, serializer):
         try:

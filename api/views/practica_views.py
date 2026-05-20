@@ -72,17 +72,20 @@ class PracticaEstudianteViewSet(viewsets.ModelViewSet):
             
         pe = self.get_object()
         calificacion = request.data.get('calificacion')
-        comentario = request.data.get('comentario')
+        comentario = request.data.get('comentario', '')
         estado = request.data.get('estado') # aprobada/reprobada
 
-        if not calificacion or not estado:
+        if calificacion is None or not estado:
             return Response({'error': 'Calificación y estado son requeridos'}, status=400)
 
-        pe.calificacion = calificacion
-        pe.comentario_tecnico = comentario
-        pe.estado = estado
-        pe.save()
-        return Response({'status': 'Práctica calificada'})
+        try:
+            pe.calificacion = float(calificacion)
+            pe.comentario_tecnico = comentario
+            pe.estado = estado
+            pe.save()
+            return Response({'status': 'Práctica calificada', 'id': pe.id}, status=200)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
 
 class EvidenciaPracticaViewSet(viewsets.ModelViewSet):
     queryset = EvidenciaPractica.objects.all()
@@ -107,6 +110,9 @@ class TipoPracticaViewSet(viewsets.ModelViewSet):
 class PracticaViewSet(viewsets.ModelViewSet):
     queryset = Practica.objects.all()
     serializer_class = PracticaSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(id_usuario_creador=self.request.user)
 
     @action(detail=False, methods=['get'])
     def mis_practicas(self, request):
