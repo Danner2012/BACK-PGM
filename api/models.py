@@ -229,6 +229,7 @@ class Herramienta(models.Model):
 class Modelo3D(models.Model):
     id_herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE, related_name='modelos_3d', db_column='id_herramienta')
     archivo = models.FileField(upload_to='herramientas/modelos/')
+    archivo_esquema = models.ImageField(upload_to='herramientas/esquemas/', null=True, blank=True)
     nombre_identificador = models.CharField(max_length=100, help_text="Nombre para identificar esta parte o variante")
     descripcion = models.TextField(blank=True, null=True)
     escala = models.FloatField(default=1.0)
