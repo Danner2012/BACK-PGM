@@ -1,5 +1,34 @@
 from rest_framework import serializers
-from ..models import Practica, TipoRecurso, TipoPractica, RecursoPractica, PracticaHerramienta, Prestamo, PrestamoDetalle, DevolucionHerramienta, Herramienta
+from ..models import (
+    Practica, TipoRecurso, TipoPractica, RecursoPractica, 
+    PracticaHerramienta, Prestamo, PrestamoDetalle, 
+    DevolucionHerramienta, Herramienta, PracticaEstudiante, EvidenciaPractica
+)
+
+class EvidenciaPracticaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EvidenciaPractica
+        fields = '__all__'
+
+class PracticaEstudianteSerializer(serializers.ModelSerializer):
+    evidencias = EvidenciaPracticaSerializer(many=True, read_only=True)
+    practica_detalle = serializers.SerializerMethodField()
+    estudiante_nombre = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PracticaEstudiante
+        fields = '__all__'
+
+    def get_practica_detalle(self, obj):
+        return {
+            'titulo': obj.id_practica.titulo,
+            'descripcion': obj.id_practica.descripcion,
+            'curso_nombre': obj.id_practica.id_curso.nombre
+        }
+
+    def get_estudiante_nombre(self, obj):
+        e = obj.id_inscripcion.id_estudiante
+        return f"{e.nombre} {e.apellido_paterno} {e.apellido_materno}".strip()
 
 class TipoRecursoSerializer(serializers.ModelSerializer):
     class Meta:

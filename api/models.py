@@ -382,3 +382,37 @@ class DevolucionHerramienta(models.Model):
 
     class Meta:
         db_table = 'devolucion_herramienta'
+
+class PracticaEstudiante(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('entregada', 'Entregada'),
+        ('aprobada', 'Aprobada'),
+        ('reprobada', 'Reprobada')
+    ]
+    id_inscripcion = models.ForeignKey(Inscripcion, on_delete=models.CASCADE, db_column='id_inscripcion')
+    id_practica = models.ForeignKey(Practica, on_delete=models.CASCADE, db_column='id_practica')
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    calificacion = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    comentario_tecnico = models.TextField(null=True, blank=True)
+    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    fecha_entrega = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'practica_estudiante'
+        unique_together = ('id_inscripcion', 'id_practica')
+
+    def __str__(self):
+        return f"{self.id_inscripcion.id_estudiante.nombre} - {self.id_practica.titulo}"
+
+class EvidenciaPractica(models.Model):
+    id_practica_estudiante = models.ForeignKey(PracticaEstudiante, on_delete=models.CASCADE, db_column='id_practica_estudiante', related_name='evidencias')
+    archivo = models.FileField(upload_to='practicas/evidencias/')
+    descripcion = models.TextField(null=True, blank=True)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'evidencia_practica'
+
+    def __str__(self):
+        return f"Evidencia de {self.id_practica_estudiante}"
