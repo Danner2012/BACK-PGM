@@ -69,6 +69,7 @@ class PrestamoDetalleSerializer(serializers.ModelSerializer):
 
 class PrestamoSerializer(serializers.ModelSerializer):
     id_estudiante = serializers.ReadOnlyField(source='id_inscripcion.id_estudiante.id')
+    id_curso = serializers.ReadOnlyField(source='id_inscripcion.id_curso.id')
     estudiante_nombre = serializers.SerializerMethodField()
     estudiante_ci = serializers.ReadOnlyField(source='id_inscripcion.id_estudiante.ci')
     curso_nombre = serializers.ReadOnlyField(source='id_inscripcion.id_curso.nombre')
@@ -94,7 +95,7 @@ class PrestamoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prestamo
         fields = [
-            'id', 'id_inscripcion', 'id_practica', 'id_tecnico', 'id_estudiante', 'fecha_prestamo', 
+            'id', 'id_inscripcion', 'id_practica', 'id_tecnico', 'id_estudiante', 'id_curso', 'fecha_prestamo', 
             'observacion', 'activo', 'estudiante_nombre', 'estudiante_ci', 
             'curso_nombre', 'practica_titulo', 'tecnico_nombre', 'herramienta_nombre', 
             'cantidad_prestada', 'total_devuelto', 'estado', 'detalles', 
