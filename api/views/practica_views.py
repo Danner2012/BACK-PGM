@@ -151,18 +151,28 @@ class PracticaViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class RecursoPracticaViewSet(viewsets.ModelViewSet):
-    queryset = RecursoPractica.objects.filter(estado=True)
     serializer_class = RecursoPracticaSerializer
 
+    def get_queryset(self):
+        return RecursoPractica.objects.filter(estado=True)
+
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.estado = False
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            instance = RecursoPractica.objects.get(pk=kwargs.get('pk'))
+            # Eliminación física para asegurar que desaparezca de la lista de la práctica
+            instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except RecursoPractica.DoesNotExist:
+            return Response({'error': 'El recurso no existe'}, status=status.HTTP_404_NOT_FOUND)
 
 class PracticaHerramientaViewSet(viewsets.ModelViewSet):
     queryset = PracticaHerramienta.objects.all()
     serializer_class = PracticaHerramientaSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class PrestamoViewSet(viewsets.ModelViewSet):
     serializer_class = PrestamoSerializer

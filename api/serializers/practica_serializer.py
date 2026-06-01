@@ -74,6 +74,13 @@ class PracticaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practica
         fields = '__all__'
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=Practica.objects.all(),
+                fields=['id_curso', 'id_tipo_practica', 'titulo'],
+                message="Ya existe una práctica con este mismo título, curso y tipo seleccionado."
+            )
+        ]
 
     def get_usuario_creador_nombre(self, obj):
         if not obj.id_usuario_creador:

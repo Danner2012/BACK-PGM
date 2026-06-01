@@ -15,6 +15,12 @@ class TipoCursoViewSet(viewsets.ModelViewSet):
     queryset = TipoCurso.objects.all()
     serializer_class = TipoCursoSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"error": "No está permitido eliminar tipos de curso para preservar la integridad de los datos."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
 class DiaViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Dia.objects.all()

@@ -117,7 +117,7 @@ class TipoCurso(models.Model):
 
 class Curso(models.Model):
     id_administrador = models.ForeignKey(Administrador, on_delete=models.CASCADE, db_column='id_administrador')
-    id_tipo = models.ForeignKey(TipoCurso, on_delete=models.CASCADE, db_column='id_tipo')
+    id_tipo = models.ForeignKey(TipoCurso, on_delete=models.PROTECT, db_column='id_tipo')
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField()
     precio = models.DecimalField(max_digits=10, decimal_places=2)

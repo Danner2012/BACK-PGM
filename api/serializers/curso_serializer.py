@@ -31,7 +31,7 @@ class CursoHorarioSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_horario_detalle(self, obj):
-        return f"{obj.id_horario.hora_inicio} - {obj.id_horario.hora_fin}"
+        return str(obj.id_horario)
 
 class TecnicoSimpleSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
