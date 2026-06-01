@@ -108,8 +108,16 @@ class TipoPracticaViewSet(viewsets.ModelViewSet):
     serializer_class = TipoPracticaSerializer
 
 class PracticaViewSet(viewsets.ModelViewSet):
-    queryset = Practica.objects.all()
     serializer_class = PracticaSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        # Si es superusuario o administrador, ve todas
+        if user.is_superuser or hasattr(user, 'administrador'):
+            return Practica.objects.all().order_by('-id')
+        
+        # Por defecto, solo ve las que él creó (para Técnicos)
+        return Practica.objects.filter(id_usuario_creador=user).order_by('-id')
 
     def perform_create(self, serializer):
         serializer.save(id_usuario_creador=self.request.user)
