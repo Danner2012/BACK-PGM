@@ -107,7 +107,7 @@ class Estudiante(models.Model):
         db_table = 'api_estudiante'
 
 class TipoCurso(models.Model):
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.nombre
@@ -156,10 +156,11 @@ class Horario(models.Model):
     hora_fin = models.TimeField()
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} ({self.hora_inicio} - {self.hora_fin})"
 
     class Meta:
         db_table = 'horario'
+        unique_together = ('hora_inicio', 'hora_fin')
 
 class CursoHorario(models.Model):
     id_horario = models.ForeignKey(Horario, on_delete=models.CASCADE, db_column='id_horario')
