@@ -1,7 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django.db import transaction
+from django.db import transaction, models
+from django.db.models import Q
 from django.utils import timezone
 from ..models import (
     Practica, TipoRecurso, TipoPractica, RecursoPractica, 
@@ -116,8 +117,24 @@ class PracticaViewSet(viewsets.ModelViewSet):
         if user.is_superuser or hasattr(user, 'administrador'):
             return Practica.objects.all().order_by('-id')
         
-        # Por defecto, solo ve las que él creó (para Técnicos)
+        # Si es estudiante, ve las de sus cursos inscritos y confirmados
+        if hasattr(user, 'estudiante'):
+            return Practica.objects.filter(
+                id_curso__inscripcion__id_estudiante=user.estudiante,
+                id_curso__inscripcion__estado='confirmado',
+                estado=True
+            ).distinct().order_by('-id')
+        
+        # Si es técnico, ve las que creó O las de sus cursos asignados
+        if hasattr(user, 'tecnico'):
+            return Practica.objects.filter(
+                Q(id_usuario_creador=user) | 
+                Q(id_curso__cursotecnico__id_tecnico=user.tecnico)
+            ).distinct().order_by('-id')
+
+        # Por defecto (otros roles si existieran), ve las que creó
         return Practica.objects.filter(id_usuario_creador=user).order_by('-id')
+
 
     def perform_create(self, serializer):
         serializer.save(id_usuario_creador=self.request.user)
