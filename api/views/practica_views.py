@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from django.db import transaction, models
 from django.db.models import Q
 from django.utils import timezone
@@ -16,6 +17,7 @@ from ..serializers.practica_serializer import (
 )
 
 class PracticaEstudianteViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     serializer_class = PracticaEstudianteSerializer
 
     def get_queryset(self):
@@ -89,6 +91,7 @@ class PracticaEstudianteViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=400)
 
 class EvidenciaPracticaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = EvidenciaPractica.objects.all()
     serializer_class = EvidenciaPracticaSerializer
 
@@ -101,14 +104,17 @@ class EvidenciaPracticaViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
 class TipoRecursoViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = TipoRecurso.objects.all()
     serializer_class = TipoRecursoSerializer
 
 class TipoPracticaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = TipoPractica.objects.all()
     serializer_class = TipoPracticaSerializer
 
 class PracticaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     serializer_class = PracticaSerializer
 
     def get_queryset(self):
@@ -176,6 +182,7 @@ class PracticaViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class RecursoPracticaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     serializer_class = RecursoPracticaSerializer
 
     def get_queryset(self):
@@ -191,6 +198,7 @@ class RecursoPracticaViewSet(viewsets.ModelViewSet):
             return Response({'error': 'El recurso no existe'}, status=status.HTTP_404_NOT_FOUND)
 
 class PracticaHerramientaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = PracticaHerramienta.objects.all()
     serializer_class = PracticaHerramientaSerializer
 
@@ -200,6 +208,7 @@ class PracticaHerramientaViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class PrestamoViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     serializer_class = PrestamoSerializer
 
     def get_queryset(self):
@@ -219,13 +228,16 @@ class PrestamoViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class PrestamoDetalleViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = PrestamoDetalle.objects.all()
     serializer_class = PrestamoDetalleSerializer
 
 class DevolucionHerramientaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = DevolucionHerramienta.objects.all()
     serializer_class = DevolucionHerramientaSerializer
 
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
             return super().create(request, *args, **kwargs)
+
