@@ -1,5 +1,6 @@
 from api.models import CategoriaHerramienta, Herramienta, Modelo3D
 from django.shortcuts import get_object_or_404
+from django.db import models
 
 class HerramientaService:
     @staticmethod
@@ -7,8 +8,31 @@ class HerramientaService:
         return CategoriaHerramienta.objects.filter(estado=True)
 
     @staticmethod
-    def listar_herramientas():
-        return Herramienta.objects.all().prefetch_related('modelos_3d')
+    def filtrar_herramientas(filtros):
+        queryset = Herramienta.objects.all().select_related('id_categoria').prefetch_related('modelos_3d')
+        
+        search = filtros.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(nombre__icontains=search) | 
+                models.Q(descripcion__icontains=search) |
+                models.Q(id_categoria__nombre__icontains=search)
+            )
+            
+        categoria = filtros.get('categoria')
+        if categoria and categoria != 'todos':
+            queryset = queryset.filter(id_categoria_id=categoria)
+            
+        stock_status = filtros.get('stock_status')
+        if stock_status and stock_status != 'todos':
+            if stock_status == 'disponible':
+                queryset = queryset.filter(stock_disponible__gt=0)
+            elif stock_status == 'agotado':
+                queryset = queryset.filter(stock_disponible__lte=0)
+            elif stock_status == 'bajo':
+                queryset = queryset.filter(stock_disponible__gt=0, stock_disponible__lte=3)
+                
+        return queryset
 
     @staticmethod
     def obtener_herramienta_por_slug(slug):

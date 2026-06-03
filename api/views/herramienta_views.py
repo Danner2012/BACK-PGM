@@ -1,6 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from django.http import FileResponse
+import io
+from datetime import datetime
 from api.serializers.herramienta_serializer import (
     CategoriaHerramientaSerializer, 
     HerramientaSerializer, 
@@ -9,6 +12,7 @@ from api.serializers.herramienta_serializer import (
 )
 from api.services.herramienta_service import HerramientaService
 from api.models import CategoriaHerramienta, Herramienta, Modelo3D
+from api.reports import HerramientaReport
 
 class CategoriaHerramientaViewSet(viewsets.ModelViewSet):
     queryset = CategoriaHerramienta.objects.all()
@@ -28,6 +32,35 @@ class HerramientaViewSet(viewsets.ModelViewSet):
         herramienta.estado = False
         herramienta.save()
         return Response({'status': 'herramienta desactivada'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='export-pdf')
+    def export_pdf(self, request):
+        """Generar y descargar el reporte PDF filtrado"""
+        filtros = {
+            'search': request.query_params.get('search'),
+            'categoria': request.query_params.get('categoria'),
+            'stock_status': request.query_params.get('stock_status'),
+        }
+        
+        herramientas = HerramientaService.filtrar_herramientas(filtros)
+        
+        # Generar PDF
+        pdf = HerramientaReport()
+        pdf.add_page()
+        pdf.generate_table(herramientas)
+        
+        # Guardar en buffer de memoria
+        buffer = io.BytesIO()
+        pdf_content = pdf.output(dest='S')
+        buffer.write(pdf_content)
+        buffer.seek(0)
+        
+        return FileResponse(
+            buffer, 
+            as_attachment=True, 
+            filename=f'reporte_herramientas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
+            content_type='application/pdf'
+        )
 
     @action(detail=True, methods=['post'], url_path='toggle-status')
     def toggle_status(self, request, pk=None):
