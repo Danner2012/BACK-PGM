@@ -22,6 +22,8 @@ class PracticaEstudianteSerializer(serializers.ModelSerializer):
     def get_practica_detalle(self, obj):
         return {
             'id_curso': obj.id_practica.id_curso.id,
+            'id_tipo_practica': obj.id_practica.id_tipo_practica.id if obj.id_practica.id_tipo_practica else None,
+            'tipo_practica_nombre': obj.id_practica.id_tipo_practica.nombre if obj.id_practica.id_tipo_practica else 'General',
             'titulo': obj.id_practica.titulo,
             'descripcion': obj.id_practica.descripcion,
             'curso_nombre': obj.id_practica.id_curso.nombre
