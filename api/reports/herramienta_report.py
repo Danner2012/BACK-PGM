@@ -43,7 +43,8 @@ class HerramientaReport(FPDF):
         self.set_text_color(150)
         self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
         self.set_font('Arial', '', 8)
-        self.cell(0, 10, 'Celucentro © 2024 - Sistema de Gestión', 0, 0, 'R')
+        anio_actual = datetime.now().year
+        self.cell(0, 10, f'Celucentro © {anio_actual} - Sistema de Gestión', 0, 0, 'R')
 
     def generate_report_content(self, herramientas):
         # Resumen Rápido
@@ -67,17 +68,18 @@ class HerramientaReport(FPDF):
         self.set_fill_color(33, 150, 243) # Azul sólido para cabecera
         self.set_text_color(255, 255, 255) # Blanco
         
-        w = [65, 45, 25, 30, 25]
-        cols = ['Nombre de Herramienta', 'Categoría', 'Total', 'Disponible', 'Estado']
+        # Ajustamos anchos para incluir la columna de numeración (#)
+        w = [10, 60, 40, 25, 30, 25]
+        cols = ['#', 'Nombre de Herramienta', 'Categoría', 'Total', 'Disponible', 'Estado']
         
         for i in range(len(cols)):
             self.cell(w[i], 10, cols[i], 1, 0, 'C', True)
         self.ln()
         
-        # Datos de la tabla con efecto cebra
+        # Datos de la tabla con efecto cebra y numeración correlativa
         self.set_font('Arial', '', 9)
         fill = False
-        for h in herramientas:
+        for i, h in enumerate(herramientas, start=1):
             # Color de fondo alterno
             self.set_fill_color(240, 245, 255) if fill else self.set_fill_color(255, 255, 255)
             
@@ -85,21 +87,22 @@ class HerramientaReport(FPDF):
             if h.stock_disponible <= 0:
                 self.set_text_color(220, 53, 69) # Rojo crítico
             elif h.stock_disponible <= 3:
-                self.set_text_color(180, 120, 0) # Naranja/Ocre (más legible que amarillo)
+                self.set_text_color(180, 120, 0) # Naranja/Ocre
             else:
                 self.set_text_color(40, 40, 40)
             
             # Dibujar celdas
-            self.cell(w[0], 9, f" {self._truncate(h.nombre, 38)}", 1, 0, 'L', True)
+            self.cell(w[0], 9, str(i), 1, 0, 'C', True) # Columna de numeración
+            self.cell(w[1], 9, f" {self._truncate(h.nombre, 35)}", 1, 0, 'L', True)
             self.set_text_color(40, 40, 40) # Reset para el resto
             
             cat = h.id_categoria.nombre if h.id_categoria else 'General'
-            self.cell(w[1], 9, f" {self._truncate(cat, 22)}", 1, 0, 'L', True)
-            self.cell(w[2], 9, str(h.stock_total), 1, 0, 'C', True)
-            self.cell(w[3], 9, str(h.stock_disponible), 1, 0, 'C', True)
+            self.cell(w[2], 9, f" {self._truncate(cat, 20)}", 1, 0, 'L', True)
+            self.cell(w[3], 9, str(h.stock_total), 1, 0, 'C', True)
+            self.cell(w[4], 9, str(h.stock_disponible), 1, 0, 'C', True)
             
             estado = 'ACTIVO' if h.estado else 'INACT.'
-            self.cell(w[4], 9, estado, 1, 1, 'C', True)
+            self.cell(w[5], 9, estado, 1, 1, 'C', True)
             
             fill = not fill # Alternar color
 
