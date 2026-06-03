@@ -1,1 +1,2 @@
 from .herramienta_report import HerramientaReport
+from .herramienta_excel import generar_excel_herramientas

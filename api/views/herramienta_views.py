@@ -12,7 +12,7 @@ from api.serializers.herramienta_serializer import (
 )
 from api.services.herramienta_service import HerramientaService
 from api.models import CategoriaHerramienta, Herramienta, Modelo3D
-from api.reports import HerramientaReport
+from api.reports import HerramientaReport, generar_excel_herramientas
 
 class CategoriaHerramientaViewSet(viewsets.ModelViewSet):
     queryset = CategoriaHerramienta.objects.all()
@@ -81,6 +81,48 @@ class HerramientaViewSet(viewsets.ModelViewSet):
             as_attachment=True, 
             filename=filename,
             content_type='application/pdf'
+        )
+
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        """Generar y descargar el reporte Excel filtrado con datos del usuario"""
+        user = request.user
+        nombre_usuario = "Sistema"
+        rol_usuario = "Administrador"
+
+        if user.is_authenticated:
+            if hasattr(user, 'administrador'):
+                p = user.administrador
+                nombre_usuario = f"{p.nombre} {p.apellido_paterno}"
+                rol_usuario = "Administrador"
+            elif hasattr(user, 'tecnico'):
+                p = user.tecnico
+                nombre_usuario = f"{p.nombre} {p.apellido_paterno}"
+                rol_usuario = "Técnico"
+
+        filtros = {
+            'search': request.query_params.get('search'),
+            'categoria': request.query_params.get('categoria'),
+            'stock_status': request.query_params.get('stock_status'),
+        }
+        
+        herramientas = HerramientaService.filtrar_herramientas(filtros)
+        
+        # Generar Excel
+        wb = generar_excel_herramientas(herramientas, nombre_usuario, rol_usuario)
+        
+        # Guardar en buffer
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        filename = f'reporte_herramientas_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
+        
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
     @action(detail=True, methods=['post'], url_path='toggle-status')
