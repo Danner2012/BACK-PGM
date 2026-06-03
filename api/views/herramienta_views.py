@@ -35,7 +35,26 @@ class HerramientaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='export-pdf')
     def export_pdf(self, request):
-        """Generar y descargar el reporte PDF filtrado"""
+        """Generar y descargar el reporte PDF filtrado con datos del usuario"""
+        # Intentar obtener datos del usuario autenticado
+        user = request.user
+        nombre_usuario = "Sistema"
+        rol_usuario = "Administrador"
+
+        if user.is_authenticated:
+            # Buscar perfil específico (Admin, Técnico, Estudiante)
+            if hasattr(user, 'administrador'):
+                p = user.administrador
+                nombre_usuario = f"{p.nombre} {p.apellido_paterno}"
+                rol_usuario = "Administrador"
+            elif hasattr(user, 'tecnico'):
+                p = user.tecnico
+                nombre_usuario = f"{p.nombre} {p.apellido_paterno}"
+                rol_usuario = "Técnico"
+            else:
+                nombre_usuario = user.correo
+                rol_usuario = user.id_rol.nombre if user.id_rol else "Usuario"
+
         filtros = {
             'search': request.query_params.get('search'),
             'categoria': request.query_params.get('categoria'),
@@ -44,10 +63,10 @@ class HerramientaViewSet(viewsets.ModelViewSet):
         
         herramientas = HerramientaService.filtrar_herramientas(filtros)
         
-        # Generar PDF
-        pdf = HerramientaReport()
+        # Generar PDF con datos dinámicos
+        pdf = HerramientaReport(usuario_nombre=nombre_usuario, usuario_rol=rol_usuario)
         pdf.add_page()
-        pdf.generate_table(herramientas)
+        pdf.generate_report_content(herramientas)
         
         # Guardar en buffer de memoria
         buffer = io.BytesIO()
@@ -55,10 +74,12 @@ class HerramientaViewSet(viewsets.ModelViewSet):
         buffer.write(pdf_content)
         buffer.seek(0)
         
+        filename = f'reporte_herramientas_{datetime.now().strftime("%Y%m%d_%H%M")}.pdf'
+        
         return FileResponse(
             buffer, 
             as_attachment=True, 
-            filename=f'reporte_herramientas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
+            filename=filename,
             content_type='application/pdf'
         )
 
