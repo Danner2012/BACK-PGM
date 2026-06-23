@@ -18,6 +18,7 @@ from api.views.practica_views import (
     PracticaHerramientaViewSet, PrestamoViewSet, PrestamoDetalleViewSet, DevolucionHerramientaViewSet,
     PracticaEstudianteViewSet, EvidenciaPracticaViewSet
 )
+from api.views.ia_views import AficheComponenteViewSet
 
 router = DefaultRouter()
 router.register(r'tecnicos', TecnicoViewSet, basename='tecnico')
@@ -49,5 +50,20 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user/', UserProfileView.as_view(), name='user_profile'),
     path('student-stats/', StudentDashboardStatsView.as_view(), name='student_stats'),
+    
+    # Rutas explícitas para el módulo de Gestión y Reconocimiento IA
+    path('ia/afiches/', AficheComponenteViewSet.as_view({
+        'get': 'list',
+        'post': 'create'
+    }), name='afiche-list-create'),
+    path('ia/afiches/<int:pk>/', AficheComponenteViewSet.as_view({
+        'get': 'retrieve',
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='afiche-detail'),
+    path('ia/afiches/clase/<str:clase_ia>/', AficheComponenteViewSet.as_view({
+        'get': 'buscar_por_clase'
+    }), name='afiche-buscar-clase'),
+
     path('', include(router.urls)),
 ]

@@ -419,3 +419,106 @@ class EvidenciaPractica(models.Model):
 
     def __str__(self):
         return f"Evidencia de {self.id_practica_estudiante}"
+
+
+# =====================================================================
+#                        MÓDULO DE RECONOCIMIENTO IA
+# =====================================================================
+
+class AficheComponente(models.Model):
+    clase_ia = models.CharField(max_length=50, unique=True, help_text="Ej: CAPACITOR, FPC, BOBINA")
+    nombre = models.CharField(max_length=150)
+    imagen_referencia = models.ImageField(upload_to='ia/afiches/referencias/', null=True, blank=True)
+    imagen_simbolo = models.ImageField(upload_to='ia/afiches/simbolos/', null=True, blank=True)
+    descripcion_general = models.TextField()
+    herramientas = models.ManyToManyField(Herramienta, related_name='afiches_componentes', blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Afiche - {self.nombre} ({self.clase_ia})"
+
+    class Meta:
+        db_table = 'afiche_componente'
+
+
+class AficheFuncion(models.Model):
+    id_afiche = models.ForeignKey(AficheComponente, on_delete=models.CASCADE, related_name='funciones')
+    texto = models.CharField(max_length=255)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.id_afiche.nombre} - Función: {self.texto}"
+
+    class Meta:
+        db_table = 'afiche_funcion'
+
+
+class AficheCaracteristica(models.Model):
+    id_afiche = models.ForeignKey(AficheComponente, on_delete=models.CASCADE, related_name='caracteristicas')
+    texto = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.id_afiche.nombre} - Característica: {self.texto}"
+
+    class Meta:
+        db_table = 'afiche_caracteristica'
+
+
+class AficheMedicionPaso(models.Model):
+    id_afiche = models.ForeignKey(AficheComponente, on_delete=models.CASCADE, related_name='pasos_medicion')
+    orden = models.PositiveIntegerField()
+    descripcion = models.TextField()
+
+    def __str__(self):
+        return f"{self.id_afiche.nombre} - Medición Paso {self.orden}"
+
+    class Meta:
+        db_table = 'afiche_medicion_paso'
+        ordering = ['orden']
+
+
+class AficheMedicionRecurso(models.Model):
+    TIPO_CHOICES = [
+        ('imagen', 'Imagen'),
+        ('video', 'Video')
+    ]
+    id_paso = models.ForeignKey(AficheMedicionPaso, on_delete=models.CASCADE, related_name='recursos')
+    archivo = models.FileField(upload_to='ia/mediciones/recursos/')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='imagen')
+
+    def __str__(self):
+        return f"Recurso {self.tipo} - Paso Medición {self.id_paso.id}"
+
+    class Meta:
+        db_table = 'afiche_medicion_recurso'
+
+
+class AficheProcedimientoPaso(models.Model):
+    id_afiche = models.ForeignKey(AficheComponente, on_delete=models.CASCADE, related_name='pasos_procedimiento')
+    orden = models.PositiveIntegerField()
+    descripcion = models.TextField()
+
+    def __str__(self):
+        return f"{self.id_afiche.nombre} - Procedimiento Paso {self.orden}"
+
+    class Meta:
+        db_table = 'afiche_procedimiento_paso'
+        ordering = ['orden']
+
+
+class AficheProcedimientoRecurso(models.Model):
+    TIPO_CHOICES = [
+        ('imagen', 'Imagen'),
+        ('video', 'Video')
+    ]
+    id_paso = models.ForeignKey(AficheProcedimientoPaso, on_delete=models.CASCADE, related_name='recursos')
+    archivo = models.FileField(upload_to='ia/procedimientos/recursos/')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='imagen')
+
+    def __str__(self):
+        return f"Recurso {self.tipo} - Paso Procedimiento {self.id_paso.id}"
+
+    class Meta:
+        db_table = 'afiche_procedimiento_recurso'
+
