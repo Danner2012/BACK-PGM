@@ -1,13 +1,69 @@
-from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
+from api.views.auth_views import LoginView
+from api.views.user_views import UserProfileView, TecnicoViewSet, EstudianteViewSet, StudentDashboardStatsView
+from api.views.curso_views import (
+    TipoCursoViewSet, DiaViewSet, HorarioViewSet, 
+    CursoViewSet, CursoHorarioViewSet, CursoTecnicoViewSet,
+    InscripcionViewSet, PagoViewSet
 )
-from .views import test_view, get_user
+from api.views.herramienta_views import (
+    CategoriaHerramientaViewSet,
+    HerramientaViewSet,
+    Modelo3DViewSet
+)
+from api.views.practica_views import (
+    TipoRecursoViewSet, TipoPracticaViewSet, PracticaViewSet, RecursoPracticaViewSet,
+    PracticaHerramientaViewSet, PrestamoViewSet, PrestamoDetalleViewSet, DevolucionHerramientaViewSet,
+    PracticaEstudianteViewSet, EvidenciaPracticaViewSet
+)
+from api.views.ia_views import AficheComponenteViewSet
+
+router = DefaultRouter()
+router.register(r'tecnicos', TecnicoViewSet, basename='tecnico')
+router.register(r'estudiantes', EstudianteViewSet, basename='estudiante')
+router.register(r'tipos-curso', TipoCursoViewSet, basename='tipo-curso')
+router.register(r'dias', DiaViewSet, basename='dia')
+router.register(r'horarios', HorarioViewSet, basename='horario')
+router.register(r'cursos', CursoViewSet, basename='curso')
+router.register(r'curso-horarios', CursoHorarioViewSet, basename='curso-horario')
+router.register(r'curso-tecnicos', CursoTecnicoViewSet, basename='curso-tecnico')
+router.register(r'inscripciones', InscripcionViewSet, basename='inscripcion')
+router.register(r'pagos', PagoViewSet, basename='pago')
+router.register(r'categorias-herramientas', CategoriaHerramientaViewSet, basename='categoria-herramienta')
+router.register(r'herramientas', HerramientaViewSet, basename='herramienta')
+router.register(r'modelos-3d', Modelo3DViewSet, basename='modelo-3d')
+router.register(r'tipos-recurso', TipoRecursoViewSet, basename='tipo-recurso')
+router.register(r'tipos-practica', TipoPracticaViewSet, basename='tipo-practica')
+router.register(r'practicas', PracticaViewSet, basename='practica')
+router.register(r'recursos-practica', RecursoPracticaViewSet, basename='recurso-practica')
+router.register(r'practica-herramientas', PracticaHerramientaViewSet, basename='practica-herramienta')
+router.register(r'prestamos', PrestamoViewSet, basename='prestamo')
+router.register(r'detalles-prestamos', PrestamoDetalleViewSet, basename='prestamo-detalle')
+router.register(r'devoluciones-herramientas', DevolucionHerramientaViewSet, basename='devolucion-herramienta')
+router.register(r'practicas-estudiante', PracticaEstudianteViewSet, basename='practica-estudiante')
+router.register(r'evidencias-practica', EvidenciaPracticaViewSet, basename='evidencia-practica')
 
 urlpatterns = [
-    path('test/', test_view, name='test_view'),
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login/', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('user/', get_user, name='get_user'),
+    path('user/', UserProfileView.as_view(), name='user_profile'),
+    path('student-stats/', StudentDashboardStatsView.as_view(), name='student_stats'),
+    
+    # Rutas explícitas para el módulo de Gestión y Reconocimiento IA
+    path('ia/afiches/', AficheComponenteViewSet.as_view({
+        'get': 'list',
+        'post': 'create'
+    }), name='afiche-list-create'),
+    path('ia/afiches/<int:pk>/', AficheComponenteViewSet.as_view({
+        'get': 'retrieve',
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='afiche-detail'),
+    path('ia/afiches/clase/<str:clase_ia>/', AficheComponenteViewSet.as_view({
+        'get': 'buscar_por_clase'
+    }), name='afiche-buscar-clase'),
+
+    path('', include(router.urls)),
 ]
